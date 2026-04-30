@@ -27,7 +27,12 @@ body {
   font-family: 'Inter', sans-serif;
   font-weight: 300;
   overflow-x: hidden;
+  font-feature-settings: "liga", "dlig", "onum", "kern";
 }
+
+/* Body text rhythm */
+p, li { line-height: 1.7; letter-spacing: 0.01em; }
+h1, h2, h3 { letter-spacing: -0.02em; }
 
 /* Faint watercolor texture overlay */
 body::before {
@@ -55,6 +60,30 @@ body::before {
   .section-sub {
     @apply font-body text-xs text-ink-soft tracking-[0.3em] uppercase;
   }
+
+  /* Envelope open button — transparent + animated underline */
+  .envelope-btn {
+    @apply relative px-10 py-3 border border-gold text-ink font-body font-light tracking-[0.18em] text-sm uppercase overflow-hidden;
+    background: transparent;
+    transition: border-color 400ms ease, box-shadow 400ms ease;
+  }
+  .envelope-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--gold);
+    transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .envelope-btn:hover::after { width: 100%; }
+  .envelope-btn:hover {
+    box-shadow: 0 0 24px -4px rgba(201,169,110,0.5);
+    border-color: rgba(201,169,110,0.9);
+  }
+  .envelope-btn:active { transform: scale(0.98); }
+  .envelope-btn:disabled { opacity: 0.6; cursor: default; }
 }
 
 @media (prefers-reduced-motion: reduce) {
