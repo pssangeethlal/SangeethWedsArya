@@ -18,15 +18,17 @@ function getTimeLeft(): TimeLeft {
   }
 }
 
-// Responsive font size — stays in one row on mobile
-const FS = 44
+// Font size for the digits — small enough to always fit in one row on 375px mobile
+// Card total width ≈ FS*1.8 + padding; 4 cards + 3 separators must fit in ~320px
+const FS = 36        // digit font size px
+const CARD_H = 52    // inner clip height — larger than FS to fully contain ascenders
 
 function Digit({ value, label, pulse }: { value: number; label: string; pulse?: boolean }) {
   const str = String(value).padStart(2, '0')
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Outer gold border */}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {/* Outer gold line */}
       <div style={{
         padding: 1,
         background: 'rgba(201,169,110,0.45)',
@@ -34,18 +36,19 @@ function Digit({ value, label, pulse }: { value: number; label: string; pulse?: 
       }}>
         {/* Ivory gap */}
         <div style={{ padding: 3, background: 'var(--ivory)', borderRadius: 4 }}>
-          {/* Inner gold border + content */}
+          {/* Inner line + content */}
           <div style={{
-            border: '1px solid rgba(201,169,110,0.28)',
+            border: '1px solid rgba(201,169,110,0.25)',
             borderRadius: 3,
-            padding: '18px 20px 14px',
-            minWidth: 72,
+            // Generous padding so digits never touch the border
+            padding: '14px 18px 12px',
+            // Wide enough for two digits at FS with comfortable margin
+            minWidth: Math.ceil(FS * 1.9),
             position: 'relative',
-            overflow: 'hidden',
-            background: 'linear-gradient(160deg, rgba(255,244,236,0.6) 0%, transparent 100%)',
+            background: 'linear-gradient(160deg,rgba(255,244,236,0.5) 0%,transparent 100%)',
           }}>
-            {/* Flip container — fixed height in px so no 1lh ambiguity */}
-            <div style={{ position: 'relative', height: FS, overflow: 'hidden' }}>
+            {/* Clip window — taller than FS to hold Cormorant's tall ascenders */}
+            <div style={{ position: 'relative', height: CARD_H, overflow: 'hidden' }}>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                   key={str}
@@ -55,18 +58,19 @@ function Digit({ value, label, pulse }: { value: number; label: string; pulse?: 
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: FS,
-                    lineHeight: 1,
+                    // Fully explicit — inherited nothing from body
                     fontFamily: '"Cormorant Garamond", serif',
+                    fontSize: FS,
                     fontWeight: 300,
+                    lineHeight: 1,
                     color: 'var(--ink)',
-                    // Override global onum — use lining tabular numerals
                     fontFeatureSettings: '"tnum", "lnum", "kern"',
                     fontVariantNumeric: 'tabular-nums lining-nums',
+                    letterSpacing: '0.04em',
                   }}
-                  initial={{ y: FS, opacity: 0 }}
+                  initial={{ y: CARD_H, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -FS, opacity: 0 }}
+                  exit={{ y: -CARD_H, opacity: 0 }}
                   transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {str}
@@ -74,14 +78,15 @@ function Digit({ value, label, pulse }: { value: number; label: string; pulse?: 
               </AnimatePresence>
             </div>
 
-            {/* Seconds pulse glow */}
+            {/* Seconds pulse */}
             {pulse && (
               <motion.div
-                className="absolute inset-0 pointer-events-none"
-                style={{ borderRadius: 3 }}
+                style={{
+                  position: 'absolute', inset: 0, borderRadius: 3, pointerEvents: 'none',
+                }}
                 animate={{ boxShadow: [
                   '0 0 0px rgba(201,169,110,0)',
-                  '0 0 16px rgba(201,169,110,0.32)',
+                  '0 0 14px rgba(201,169,110,0.28)',
                   '0 0 0px rgba(201,169,110,0)',
                 ]}}
                 transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
@@ -94,30 +99,15 @@ function Digit({ value, label, pulse }: { value: number; label: string; pulse?: 
       <span style={{
         fontFamily: 'Inter, sans-serif',
         fontSize: 9,
-        letterSpacing: '0.28em',
+        letterSpacing: '0.26em',
         textTransform: 'uppercase',
         color: 'var(--ink-soft)',
         marginTop: 10,
+        display: 'block',
       }}>
         {label}
       </span>
     </div>
-  )
-}
-
-function Separator() {
-  return (
-    <span style={{
-      fontFamily: '"Cormorant Garamond", serif',
-      fontSize: 28,
-      color: 'rgba(201,169,110,0.45)',
-      fontWeight: 300,
-      lineHeight: 1,
-      marginTop: FS * 0.5 - 4, // vertically align with digit midpoint
-      flexShrink: 0,
-    }} aria-hidden>
-      ·
-    </span>
   )
 }
 
@@ -130,30 +120,61 @@ export default function Countdown() {
   }, [])
 
   return (
-    <section className="py-24 px-4 text-center">
+    <section style={{ padding: '96px 16px', textAlign: 'center' }}>
       <motion.div
         initial={{ opacity: 0, y: 30, filter: 'blur(8px)' }}
         whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         viewport={{ once: true }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       >
-        <p className="section-sub mb-4">Until forever begins</p>
-        <h2 className="section-heading mb-12">Counting down to forever</h2>
+        <p className="section-sub" style={{ marginBottom: 16 }}>Until forever begins</p>
+        <h2 className="section-heading" style={{ marginBottom: 48 }}>Counting down to forever</h2>
 
-        {/* Single row always — px values, no wrapping */}
+        {/* nowrap — always one row; gap scales with screen */}
         <div style={{
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'center',
-          gap: 8,
+          gap: 'clamp(4px, 1.5vw, 16px)',
           flexWrap: 'nowrap',
         }}>
-          <Digit value={time.days} label="Days" />
-          <Separator />
-          <Digit value={time.hours} label="Hours" />
-          <Separator />
+          <Digit value={time.days}    label="Days" />
+
+          <span style={{
+            fontFamily: '"Cormorant Garamond", serif',
+            fontSize: 24,
+            color: 'rgba(201,169,110,0.45)',
+            fontWeight: 300,
+            lineHeight: 1,
+            // Align vertically to the middle of the card area
+            marginTop: 14 + (CARD_H - 24) / 2,
+            flexShrink: 0,
+          }} aria-hidden>·</span>
+
+          <Digit value={time.hours}   label="Hours" />
+
+          <span style={{
+            fontFamily: '"Cormorant Garamond", serif',
+            fontSize: 24,
+            color: 'rgba(201,169,110,0.45)',
+            fontWeight: 300,
+            lineHeight: 1,
+            marginTop: 14 + (CARD_H - 24) / 2,
+            flexShrink: 0,
+          }} aria-hidden>·</span>
+
           <Digit value={time.minutes} label="Minutes" />
-          <Separator />
+
+          <span style={{
+            fontFamily: '"Cormorant Garamond", serif',
+            fontSize: 24,
+            color: 'rgba(201,169,110,0.45)',
+            fontWeight: 300,
+            lineHeight: 1,
+            marginTop: 14 + (CARD_H - 24) / 2,
+            flexShrink: 0,
+          }} aria-hidden>·</span>
+
           <Digit value={time.seconds} label="Seconds" pulse />
         </div>
       </motion.div>

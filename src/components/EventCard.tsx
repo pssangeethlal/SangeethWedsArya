@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { googleCalendarUrl, outlookCalendarUrl, downloadICS } from '../lib/calendar'
 import type { CalendarEvent } from '../lib/calendar'
@@ -14,108 +14,45 @@ interface EventCardProps {
   calEvent: CalendarEvent
 }
 
-// Elegant modal-style calendar chooser
-function CalendarModal({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
-    }
-    // slight delay so the click that opened it doesn't immediately close it
-    const t = setTimeout(() => document.addEventListener('mousedown', handler), 50)
-    return () => { clearTimeout(t); document.removeEventListener('mousedown', handler) }
-  }, [onClose])
-
+// Inline sliding calendar panel — no absolute positioning, always centred in card
+function CalendarPanel({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
   const options = [
     {
       label: 'Google Calendar',
-      icon: (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.2"/>
-          <path d="M1 6h14" stroke="currentColor" strokeWidth="1.2"/>
-          <path d="M5 1v2M11 1v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-          <path d="M8 9.5v2M7 10.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-        </svg>
-      ),
-      action: () => window.open(googleCalendarUrl(event), '_blank'),
+      action: () => { window.open(googleCalendarUrl(event), '_blank'); onClose() },
     },
     {
       label: 'Outlook',
-      icon: (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.2"/>
-          <path d="M1 6h14" stroke="currentColor" strokeWidth="1.2"/>
-          <path d="M5 1v2M11 1v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-          <circle cx="8" cy="10" r="2" stroke="currentColor" strokeWidth="1.1"/>
-        </svg>
-      ),
-      action: () => window.open(outlookCalendarUrl(event), '_blank'),
+      action: () => { window.open(outlookCalendarUrl(event), '_blank'); onClose() },
     },
     {
       label: 'Apple / iCal (.ics)',
-      icon: (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.2"/>
-          <path d="M1 6h14" stroke="currentColor" strokeWidth="1.2"/>
-          <path d="M5 1v2M11 1v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-          <path d="M8 8v4M6 10l2 2 2-2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
       action: () => { downloadICS(event); onClose() },
     },
   ]
 
   return (
     <motion.div
-      ref={ref}
-      className="absolute left-1/2 z-30"
-      style={{ top: 'calc(100% + 16px)', transform: 'translateX(-50%)' }}
-      initial={{ opacity: 0, y: -8, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -8, scale: 0.96 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      style={{ overflow: 'hidden', marginTop: 16 }}
     >
-      {/* Upward-pointing caret */}
-      <div style={{
-        position: 'absolute',
-        top: -7,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 0,
-        height: 0,
-        borderLeft: '7px solid transparent',
-        borderRight: '7px solid transparent',
-        borderBottom: '7px solid rgba(201,169,110,0.35)',
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: -5.5,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 0,
-        height: 0,
-        borderLeft: '6px solid transparent',
-        borderRight: '6px solid transparent',
-        borderBottom: '6px solid #FBF7F2',
-      }} />
-
-      {/* Panel */}
       <div style={{
         background: '#FBF7F2',
-        border: '1px solid rgba(201,169,110,0.35)',
-        borderRadius: 6,
-        boxShadow: '0 8px 32px rgba(58,47,42,0.12), 0 2px 8px rgba(58,47,42,0.06)',
+        border: '1px solid rgba(201,169,110,0.4)',
+        borderRadius: 8,
         overflow: 'hidden',
-        minWidth: 200,
+        boxShadow: '0 4px 20px rgba(58,47,42,0.08)',
       }}>
-        {/* Panel header */}
+        {/* Header */}
         <div style={{
-          padding: '10px 16px 8px',
-          borderBottom: '1px solid rgba(201,169,110,0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          padding: '10px 16px 9px',
+          borderBottom: '1px solid rgba(201,169,110,0.18)',
         }}>
           <span style={{
             fontFamily: 'Inter, sans-serif',
@@ -128,40 +65,48 @@ function CalendarModal({ event, onClose }: { event: CalendarEvent; onClose: () =
           </span>
           <button
             onClick={onClose}
-            style={{ color: 'var(--ink-soft)', lineHeight: 1, padding: 2, opacity: 0.6 }}
+            style={{
+              color: 'var(--ink-soft)', opacity: 0.55,
+              lineHeight: 1, padding: 2, cursor: 'pointer',
+              background: 'none', border: 'none',
+            }}
             aria-label="Close"
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-              <path d="M1 1l10 10M11 1L1 11"/>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+              <path d="M1 1l9 9M10 1L1 10"/>
             </svg>
           </button>
         </div>
 
         {/* Options */}
-        {options.map(({ label, icon, action }, i) => (
+        {options.map(({ label, action }, i) => (
           <button
             key={label}
-            onClick={() => { action(); onClose() }}
+            onClick={action}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
               width: '100%',
-              padding: '11px 16px',
+              padding: '12px 18px',
               fontFamily: '"Cormorant Garamond", serif',
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: 400,
               color: 'var(--ink)',
               background: 'transparent',
-              borderBottom: i < options.length - 1 ? '1px solid rgba(201,169,110,0.12)' : 'none',
-              transition: 'background 200ms ease',
-              textAlign: 'left',
+              border: 'none',
+              borderBottom: i < options.length - 1 ? '1px solid rgba(201,169,110,0.1)' : 'none',
               cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'background 180ms ease, color 180ms ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(201,169,110,0.08)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(201,169,110,0.1)'
+              e.currentTarget.style.color = 'var(--ink)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+            }}
           >
-            <span style={{ color: 'var(--gold)', flexShrink: 0 }}>{icon}</span>
             {label}
           </button>
         ))}
@@ -303,26 +248,25 @@ export default function EventCard({
         />
       </div>
 
-      {/* Action buttons */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 32, position: 'relative' }}>
-        <div style={{ position: 'relative' }}>
-          <ActionBtn
-            onClick={() => setCalOpen((v) => !v)}
-            label="Add to Calendar"
-            active={calOpen}
-            icon={<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="1.5" y="2.5" width="15" height="14" rx="2"/><path d="M1.5 7h15M6 1v3M12 1v3M9 10.5v3M7.5 12h3"/></svg>}
-          />
-          <AnimatePresence>
-            {calOpen && <CalendarModal event={calEvent} onClose={() => setCalOpen(false)} />}
-          </AnimatePresence>
-        </div>
-
+      {/* Action buttons row */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 32 }}>
+        <ActionBtn
+          onClick={() => setCalOpen((v) => !v)}
+          label="Add to Calendar"
+          active={calOpen}
+          icon={<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="1.5" y="2.5" width="15" height="14" rx="2"/><path d="M1.5 7h15M6 1v3M12 1v3M9 10.5v3M7.5 12h3"/></svg>}
+        />
         <ActionBtn
           href={mapUrl}
           label="View Location"
           icon={<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 1.5C6.515 1.5 4.5 3.515 4.5 6c0 4 4.5 10.5 4.5 10.5S13.5 10 13.5 6c0-2.485-2.015-4.5-4.5-4.5z"/><circle cx="9" cy="6" r="1.8"/></svg>}
         />
       </div>
+
+      {/* Calendar panel — inline, always centred in card, no overflow */}
+      <AnimatePresence>
+        {calOpen && <CalendarPanel event={calEvent} onClose={() => setCalOpen(false)} />}
+      </AnimatePresence>
     </motion.div>
   )
 }
