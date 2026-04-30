@@ -8,7 +8,11 @@ import EventCard from './components/EventCard'
 import Gallery from './components/Gallery'
 import Footer from './components/Footer'
 import BotanicalDivider from './components/BotanicalDivider'
+import { ScrollProgressTrack, ScrollIndicator, MapFAB } from './components/ScrollProgress'
 import { weddingEvent, receptionEvent } from './lib/calendar'
+
+// Venue map URL for FAB (wedding venue)
+const VENUE_MAP_URL = 'https://maps.app.goo.gl/FqXUdBE8PCmXdsFX9'
 
 export default function App() {
   const [opened, setOpened] = useState(false)
@@ -35,46 +39,46 @@ export default function App() {
             <section className="py-24 px-6">
               <motion.div
                 className="text-center mb-4"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 20, filter: 'blur(6px)' }}
+                whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
+                transition={{ duration: 0.9 }}
               >
                 <p className="section-sub mb-4">Join us for</p>
               </motion.div>
-              <div className="relative">
-                <EventCard
-                  title="The Wedding Ceremony"
-                  date="Sunday, 23 August 2026"
-                  time="11:00 AM IST"
-                  venue="M K Convention Centre"
-                  address="Eramalloor"
-                  mapUrl="https://maps.app.goo.gl/FqXUdBE8PCmXdsFX9"
-                  calEvent={weddingEvent}
-                />
-              </div>
+              <EventCard
+                title="The Wedding Ceremony"
+                date="Sunday, 23 . 08 . 2026"
+                time="eleven in the morning"
+                venue="M K Convention Centre"
+                address="Eramalloor"
+                mapUrl="https://maps.app.goo.gl/FqXUdBE8PCmXdsFX9"
+                calEvent={weddingEvent}
+              />
             </section>
 
             <BotanicalDivider />
 
             {/* Reception */}
-            {/* TODO: Update time when confirmed. Currently 6:00 PM IST (default). */}
             <section className="py-24 px-6">
-              <div className="relative">
-                <EventCard
-                  title="Wedding Reception"
-                  subtitle="Celebrate with us"
-                  date="Saturday, 29 August 2026"
-                  time="6:00 PM IST"
-                  venue="Reception Venue"
-                  mapUrl="https://maps.app.goo.gl/CRo8WU7sw4dCcAjWA"
-                  calEvent={receptionEvent}
-                />
-              </div>
+              <EventCard
+                title="Wedding Reception"
+                subtitle="Celebrate with us"
+                date="Saturday, 29 . 08 . 2026"
+                time="six in the evening"
+                venue="Reception Venue"
+                mapUrl="https://maps.app.goo.gl/CRo8WU7sw4dCcAjWA"
+                calEvent={receptionEvent}
+              />
             </section>
 
             <Gallery />
             <Footer />
+
+            {/* Global UI chrome */}
+            <ScrollProgressTrack />
+            <ScrollIndicator />
+            <MapFAB mapUrl={VENUE_MAP_URL} />
           </motion.main>
         )}
       </AnimatePresence>
