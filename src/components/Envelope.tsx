@@ -105,14 +105,14 @@ export default function Envelope({ onOpen }: EnvelopeProps) {
     if (phase !== 'idle') return
     setAttentionMode(false)
     setPhase('pressing')
-    setTimeout(() => setPhase('cracking'), 180)
-    setTimeout(() => setPhase('flapping'), 680)
-    setTimeout(() => setPhase('sliding'), 1080)
-    setTimeout(() => setPhase('petals'), 1880)
+    setTimeout(() => setPhase('cracking'),  160)  // wax cracks
+    setTimeout(() => setPhase('flapping'),  620)  // flap begins rotating
+    setTimeout(() => setPhase('sliding'),  1700)  // card slides up (after flap fully opens ~1.2s)
+    setTimeout(() => setPhase('petals'),   2400)  // petals burst
     setTimeout(() => {
       setPhase('done')
       onOpen()
-    }, shouldReduceMotion ? 300 : 3600)
+    }, shouldReduceMotion ? 300 : 4000)
   }, [phase, onOpen, shouldReduceMotion])
 
   const glowOpacity =
@@ -274,6 +274,13 @@ export default function Envelope({ onOpen }: EnvelopeProps) {
                       <stop offset="100%" stopColor="#E5D8C8" />
                     </linearGradient>
 
+                    {/* Interior warm lining gradient — glows when flap opens */}
+                    <linearGradient id="interiorGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+                      <stop offset="0%" stopColor="#FFF0DC" stopOpacity="0.95"/>
+                      <stop offset="50%" stopColor="#FAF0E0" stopOpacity="0.7"/>
+                      <stop offset="100%" stopColor="#F5E8D0" stopOpacity="0.3"/>
+                    </linearGradient>
+
                     {/* Botanical sprig (shown on back of flap) */}
                     <g id="botanical">
                       <path d="M215 108 C218 96 228 90 224 80" stroke="#C9A96E" strokeWidth="0.9" fill="none" strokeLinecap="round"/>
@@ -288,17 +295,40 @@ export default function Envelope({ onOpen }: EnvelopeProps) {
                     </g>
                   </defs>
 
-                  {/* ── LAYER 1: Inner card ── */}
+                  {/* ── LAYER 1: Inner card — rises dramatically ── */}
                   <motion.g
                     animate={cardSliding
-                      ? { translateY: -55, opacity: 1 }
+                      ? { translateY: -72, opacity: 1 }
                       : { translateY: 0, opacity: 0 }}
-                    transition={{ duration: 0.95, ease: EXPO_OUT, delay: 0.1 }}
+                    transition={{ duration: 1.1, ease: EXPO_OUT, delay: 0.15 }}
                   >
-                    <rect x="65" y="95" width="300" height="196" rx="2" fill="#FDFAF5" stroke="rgba(201,169,110,0.3)" strokeWidth="0.8" />
-                    <text x="215" y="152" fontFamily="Pinyon Script, cursive" fontSize="22" textAnchor="middle" fill="rgba(107,95,84,0.22)">Sangeeth</text>
-                    <text x="215" y="175" fontFamily="Pinyon Script, cursive" fontSize="15" textAnchor="middle" fill="rgba(201,169,110,0.18)">&amp;</text>
-                    <text x="215" y="200" fontFamily="Pinyon Script, cursive" fontSize="22" textAnchor="middle" fill="rgba(107,95,84,0.22)">Arya</text>
+                    {/* Card shadow beneath */}
+                    <ellipse cx="215" cy="298" rx="130" ry="8"
+                      fill="rgba(58,47,42,0.12)" style={{ filter: 'blur(6px)' }}
+                    />
+                    {/* Card body */}
+                    <rect x="55" y="88" width="320" height="210" rx="3"
+                      fill="#FEFCF8"
+                      stroke="rgba(201,169,110,0.5)" strokeWidth="1"
+                    />
+                    {/* Inner double border */}
+                    <rect x="63" y="96" width="304" height="194" rx="1"
+                      fill="none" stroke="rgba(201,169,110,0.22)" strokeWidth="0.8"
+                    />
+                    {/* Corner flourishes */}
+                    <path d="M63,110 L63,96 L77,96" fill="none" stroke="rgba(201,169,110,0.45)" strokeWidth="0.8" strokeLinecap="round"/>
+                    <path d="M353,110 L353,96 L339,96" fill="none" stroke="rgba(201,169,110,0.45)" strokeWidth="0.8" strokeLinecap="round"/>
+                    <path d="M63,278 L63,290 L77,290" fill="none" stroke="rgba(201,169,110,0.45)" strokeWidth="0.8" strokeLinecap="round"/>
+                    <path d="M353,278 L353,290 L339,290" fill="none" stroke="rgba(201,169,110,0.45)" strokeWidth="0.8" strokeLinecap="round"/>
+                    {/* Names */}
+                    <text x="215" y="158" fontFamily="Pinyon Script, cursive" fontSize="28" textAnchor="middle" fill="rgba(107,95,84,0.35)">Sangeeth</text>
+                    <text x="215" y="186" fontFamily="Pinyon Script, cursive" fontSize="18" textAnchor="middle" fill="rgba(201,169,110,0.4)">&amp;</text>
+                    <text x="215" y="215" fontFamily="Pinyon Script, cursive" fontSize="28" textAnchor="middle" fill="rgba(107,95,84,0.35)">Arya</text>
+                    {/* Date */}
+                    <text x="215" y="248" fontFamily="Cormorant Garamond, serif" fontSize="10" textAnchor="middle"
+                      fill="rgba(201,169,110,0.55)" letterSpacing="4">23 · 08 · 2026</text>
+                    {/* Small divider */}
+                    <line x1="175" y1="233" x2="255" y2="233" stroke="rgba(201,169,110,0.3)" strokeWidth="0.6"/>
                   </motion.g>
 
                   {/* ── LAYER 2: Envelope back panel ── */}
@@ -321,6 +351,27 @@ export default function Envelope({ onOpen }: EnvelopeProps) {
                   {/* ── LAYER 3: Bottom flap ── */}
                   <path d="M2 288 L215 200 L428 288 Z" fill="url(#bottomFlap)" />
                   <path d="M2 288 L215 200 L428 288 Z" fill="none" stroke="#C9A96E" strokeWidth="0.9" />
+
+                  {/* ── Interior warm lining — glows as flap opens ── */}
+                  <motion.rect
+                    x="2" y="90" width="426" height="198" rx="4"
+                    fill="url(#interiorGrad)"
+                    animate={flapOpen ? { opacity: 1 } : { opacity: 0 }}
+                    transition={{ duration: 0.8, delay: 0.4 }}
+                  />
+
+                  {/* ── Flap lift shadow — appears as wax cracks, before flap completes ── */}
+                  <motion.ellipse
+                    cx="215" cy="92" rx="160" ry="10"
+                    fill="rgba(58,47,42,0.18)"
+                    style={{ filter: 'blur(8px)' }}
+                    animate={
+                      sealCracked && !flapOpen
+                        ? { opacity: 1, scaleX: 1 }
+                        : { opacity: 0, scaleX: 0.5 }
+                    }
+                    transition={{ duration: 0.5 }}
+                  />
 
                   {/* Calligraphy address — only on closed envelope */}
                   <AnimatePresence>
