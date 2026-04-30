@@ -35,8 +35,8 @@ function Digit({ value, label, pulse }: { value: number; label: string; pulse?: 
           <div style={{
             border: '1px solid rgba(201,169,110,0.25)',
             borderRadius: 4,
-            padding: '14px 20px',
-            minWidth: 72,
+            padding: '14px 0',
+            width: 96,
             textAlign: 'center',
             background: 'linear-gradient(160deg, rgba(255,244,236,0.5) 0%, transparent 100%)',
             position: 'relative',
