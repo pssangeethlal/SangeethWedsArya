@@ -8,6 +8,7 @@ const imageModules = import.meta.glob('../images/*', {
 }) as Record<string, string>
 
 export const allImages: string[] = Object.values(imageModules)
+  .filter((src) => !/\.heic$/i.test(src))
 
 // Specific photos — fallback to first available image if not found
 const find = (name: string) =>

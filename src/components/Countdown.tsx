@@ -21,72 +21,78 @@ function getTimeLeft(): TimeLeft {
   }
 }
 
+const FONT_SIZE = 56 // px — explicit size so 'em' resolves correctly
+
 function Digit({ value, label, pulse }: { value: number; label: string; pulse?: boolean }) {
   const str = String(value).padStart(2, '0')
 
   return (
-    <div
-      className="relative text-center"
-      style={{
-        // Double gold border: outer 1px, gap 3px, inner 1px
-        padding: '2px',
-        background: 'rgba(201,169,110,0.35)',
-        borderRadius: 4,
-      }}
-    >
-      {/* Gap layer */}
-      <div
-        style={{
-          padding: '3px',
-          background: 'var(--ivory)',
-          borderRadius: 3,
-        }}
-      >
-        {/* Inner border */}
-        <div
-          style={{
-            border: '1px solid rgba(201,169,110,0.35)',
-            borderRadius: 2,
-            padding: '24px 28px 20px',
-            minWidth: 80,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Digit flip */}
-          <div style={{ height: '1lh', overflow: 'hidden', position: 'relative' }}>
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span
-                key={str}
-                className="font-display font-light text-ink block text-center"
-                style={{
-                  fontSize: 'clamp(2.5rem, 6vw, 4rem)',
-                  fontVariantNumeric: 'tabular-nums',
-                  lineHeight: 1,
-                  display: 'block',
-                }}
-                initial={{ y: '100%', opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: '-100%', opacity: 0 }}
-                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {str}
-              </motion.span>
-            </AnimatePresence>
-          </div>
+    <div className="text-center">
+      {/* Double gold border: outer → ivory gap → inner */}
+      <div style={{ padding: 1, background: 'rgba(201,169,110,0.4)', borderRadius: 4, display: 'inline-block' }}>
+        <div style={{ padding: 3, background: 'var(--ivory)', borderRadius: 3 }}>
+          <div
+            style={{
+              border: '1px solid rgba(201,169,110,0.3)',
+              borderRadius: 2,
+              padding: '22px 26px 18px',
+              minWidth: 82,
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Fixed-height flip container */}
+            <div
+              style={{
+                position: 'relative',
+                height: FONT_SIZE,
+                overflow: 'hidden',
+              }}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={str}
+                  className="font-display font-light text-ink"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: FONT_SIZE,
+                    lineHeight: 1,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                  initial={{ y: FONT_SIZE, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -FONT_SIZE, opacity: 0 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {str}
+                </motion.span>
+              </AnimatePresence>
+            </div>
 
-          {/* Seconds pulse glow */}
-          {pulse && (
-            <motion.div
-              className="absolute inset-0 rounded-sm pointer-events-none"
-              animate={{ boxShadow: ['0 0 0px rgba(201,169,110,0)', '0 0 14px rgba(201,169,110,0.3)', '0 0 0px rgba(201,169,110,0)'] }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          )}
+            {/* Seconds pulse glow */}
+            {pulse && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                style={{ borderRadius: 2 }}
+                animate={{
+                  boxShadow: [
+                    '0 0 0px rgba(201,169,110,0)',
+                    '0 0 14px rgba(201,169,110,0.28)',
+                    '0 0 0px rgba(201,169,110,0)',
+                  ],
+                }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            )}
+          </div>
         </div>
       </div>
 
-      <span className="font-body text-[10px] text-ink-soft tracking-[0.28em] uppercase mt-2 block">
+      <span className="font-body text-[10px] text-ink-soft tracking-[0.28em] uppercase mt-2.5 block">
         {label}
       </span>
     </div>
@@ -102,7 +108,7 @@ export default function Countdown() {
   }, [])
 
   return (
-    <section className="py-24 px-6 bg-ivory text-center">
+    <section className="py-24 px-6 text-center">
       <motion.div
         initial={{ opacity: 0, y: 30, filter: 'blur(8px)' }}
         whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -114,11 +120,11 @@ export default function Countdown() {
 
         <div className="flex items-start justify-center gap-3 sm:gap-5 flex-wrap">
           <Digit value={time.days} label="Days" />
-          <span className="font-display text-3xl text-gold/60 font-light mt-8" aria-hidden>·</span>
+          <span className="font-display text-2xl text-gold/50 font-light mt-10" aria-hidden>·</span>
           <Digit value={time.hours} label="Hours" />
-          <span className="font-display text-3xl text-gold/60 font-light mt-8" aria-hidden>·</span>
+          <span className="font-display text-2xl text-gold/50 font-light mt-10" aria-hidden>·</span>
           <Digit value={time.minutes} label="Minutes" />
-          <span className="font-display text-3xl text-gold/60 font-light mt-8" aria-hidden>·</span>
+          <span className="font-display text-2xl text-gold/50 font-light mt-10" aria-hidden>·</span>
           <Digit value={time.seconds} label="Seconds" pulse />
         </div>
       </motion.div>

@@ -23,6 +23,7 @@ html {
 
 body {
   background-color: var(--ivory);
+  background-image: radial-gradient(ellipse 90% 55% at 50% 0%, #FFF4EC 0%, #FBF7F2 55%);
   color: var(--ink);
   font-family: 'Inter', sans-serif;
   font-weight: 300;
