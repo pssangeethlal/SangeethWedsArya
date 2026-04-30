@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ivory: #FBF7F2;
+  --blush: #E8C5C0;
+  --rose-deep: #B07A75;
+  --sage: #A8B5A0;
+  --gold: #C9A96E;
+  --gold-light: #E5D4A8;
+  --ink: #3A2F2A;
+  --ink-soft: #6B5D54;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--ivory);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  overflow-x: hidden;
+}
+
+/* Faint watercolor texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+@layer components {
+  .btn-gold {
+    @apply px-8 py-3 border border-gold text-ink font-body font-light tracking-[0.15em] text-sm uppercase transition-all duration-500;
+  }
+  .btn-gold:hover {
+    @apply bg-gold text-ivory shadow-[0_0_20px_rgba(201,169,110,0.4)];
+  }
+  .card-glass {
+    @apply bg-white/60 backdrop-blur-sm border border-gold/30 shadow-[0_4px_24px_rgba(58,47,42,0.08)];
+  }
+  .section-heading {
+    @apply font-display text-4xl md:text-5xl font-light text-ink tracking-tight;
+  }
+  .section-sub {
+    @apply font-body text-xs text-ink-soft tracking-[0.3em] uppercase;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
