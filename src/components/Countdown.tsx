@@ -90,9 +90,8 @@ const SEP: React.CSSProperties = {
   color: 'rgba(201,169,110,0.45)',
   fontWeight: 300,
   lineHeight: 1,
-  alignSelf: 'center',
-  marginBottom: 24,
   flexShrink: 0,
+  marginBottom: 24, // space for label below digit
 }
 
 export default function Countdown() {
@@ -114,20 +113,18 @@ export default function Countdown() {
         <p className="section-sub" style={{ marginBottom: 16 }}>Until forever begins</p>
         <h2 className="section-heading" style={{ marginBottom: 48 }}>Counting down to forever</h2>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          gap: 'clamp(6px, 2vw, 20px)',
-          flexWrap: 'nowrap',
-        }}>
-          <Digit value={time.days}    label="Days" />
-          <span style={SEP} aria-hidden>·</span>
-          <Digit value={time.hours}   label="Hours" />
-          <span style={SEP} aria-hidden>·</span>
-          <Digit value={time.minutes} label="Minutes" />
-          <span style={SEP} aria-hidden>·</span>
-          <Digit value={time.seconds} label="Seconds" pulse />
+        {/* Single row on desktop, 2×2 on mobile */}
+        <div className="countdown-wrapper">
+          <div className="countdown-row">
+            <Digit value={time.days}    label="Days" />
+            <span style={SEP} aria-hidden>·</span>
+            <Digit value={time.hours}   label="Hours" />
+          </div>
+          <div className="countdown-row">
+            <Digit value={time.minutes} label="Minutes" />
+            <span style={SEP} aria-hidden>·</span>
+            <Digit value={time.seconds} label="Seconds" pulse />
+          </div>
         </div>
       </motion.div>
     </section>

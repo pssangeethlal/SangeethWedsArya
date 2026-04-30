@@ -87,6 +87,27 @@ body::before {
   .envelope-btn:disabled { opacity: 0.6; cursor: default; }
 }
 
+/* Countdown layout */
+.countdown-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+}
+.countdown-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .countdown-wrapper {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
