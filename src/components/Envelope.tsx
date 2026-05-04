@@ -96,7 +96,7 @@ function WaxSeal({ phase, parallax }: { phase: Phase; parallax: { x: number; y: 
         height: 92,
         marginLeft: -46,
         marginTop: -46,
-        zIndex: 20,
+        zIndex: 26,
         transform: `translate(${parallax.x * 0.4}px, ${parallax.y * 0.4}px)`,
         transition: 'transform 220ms ease-out',
       }}
