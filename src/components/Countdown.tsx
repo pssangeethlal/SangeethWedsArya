@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const WEDDING_DATE = new Date('2026-08-23T05:30:00Z') // 11:00 AM IST
 
@@ -23,59 +23,67 @@ function Digit({ value, label, pulse }: { value: number; label: string; pulse?: 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {/* Outer gold border */}
       <div style={{
-        padding: 1,
-        background: 'rgba(201,169,110,0.45)',
-        borderRadius: 6,
+        position: 'relative',
+        width: 102,
+        padding: '20px 0',
+        textAlign: 'center',
+        background: 'linear-gradient(160deg, rgba(255,244,220,0.55) 0%, rgba(232,210,154,0.18) 100%)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        border: '1px solid rgba(201,162,75,0.45)',
+        borderRadius: 10,
+        boxShadow: '0 8px 28px -8px rgba(110,31,43,0.18), inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -8px 18px rgba(232,210,154,0.18)',
+        overflow: 'hidden',
       }}>
-        {/* Ivory gap */}
-        <div style={{ padding: 3, background: 'var(--ivory)', borderRadius: 5 }}>
-          {/* Inner box */}
-          <div style={{
-            border: '1px solid rgba(201,169,110,0.25)',
-            borderRadius: 4,
-            padding: '14px 0',
-            width: 96,
-            textAlign: 'center',
-            background: 'linear-gradient(160deg, rgba(255,244,236,0.5) 0%, transparent 100%)',
-            position: 'relative',
-          }}>
-            {pulse && (
-              <motion.div
-                style={{ position: 'absolute', inset: 0, borderRadius: 4, pointerEvents: 'none' }}
-                animate={{ boxShadow: [
-                  '0 0 0px rgba(201,169,110,0)',
-                  '0 0 14px rgba(201,169,110,0.28)',
-                  '0 0 0px rgba(201,169,110,0)',
-                ]}}
-                transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-              />
-            )}
-            <span style={{
-              fontFamily: '"Cormorant Garamond", serif',
-              fontSize: 40,
-              fontWeight: 300,
+        {/* corner gold ticks */}
+        <span style={cornerStyle('top', 'left')} />
+        <span style={cornerStyle('top', 'right')} />
+        <span style={cornerStyle('bottom', 'left')} />
+        <span style={cornerStyle('bottom', 'right')} />
+
+        {pulse && (
+          <motion.div
+            style={{ position: 'absolute', inset: 0, borderRadius: 10, pointerEvents: 'none' }}
+            animate={{ boxShadow: [
+              '0 0 0px rgba(201,162,75,0)',
+              '0 0 22px rgba(232,210,154,0.45)',
+              '0 0 0px rgba(201,162,75,0)',
+            ]}}
+            transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        )}
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={str}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              fontFamily: 'Marcellus, serif',
+              fontSize: 44,
               lineHeight: 1,
-              color: 'var(--ink)',
+              color: 'var(--maroon)',
               fontFeatureSettings: '"tnum", "lnum", "kern"',
               fontVariantNumeric: 'tabular-nums lining-nums',
               letterSpacing: '0.04em',
               display: 'block',
-            }}>
-              {str}
-            </span>
-          </div>
-        </div>
+              textShadow: '0 1px 0 rgba(255,255,255,0.6)',
+            }}
+          >
+            {str}
+          </motion.span>
+        </AnimatePresence>
       </div>
 
       <span style={{
-        fontFamily: 'Inter, sans-serif',
-        fontSize: 9,
-        letterSpacing: '0.26em',
+        fontFamily: 'Marcellus, serif',
+        fontSize: 10,
+        letterSpacing: '0.32em',
         textTransform: 'uppercase',
         color: 'var(--ink-soft)',
-        marginTop: 10,
+        marginTop: 12,
         display: 'block',
       }}>
         {label}
@@ -84,14 +92,26 @@ function Digit({ value, label, pulse }: { value: number; label: string; pulse?: 
   )
 }
 
+function cornerStyle(v: 'top' | 'bottom', h: 'left' | 'right'): React.CSSProperties {
+  return {
+    position: 'absolute',
+    [v]: 4, [h]: 4,
+    width: 8, height: 8,
+    borderTop: v === 'top' ? '1px solid rgba(168,132,47,0.7)' : 'none',
+    borderBottom: v === 'bottom' ? '1px solid rgba(168,132,47,0.7)' : 'none',
+    borderLeft: h === 'left' ? '1px solid rgba(168,132,47,0.7)' : 'none',
+    borderRight: h === 'right' ? '1px solid rgba(168,132,47,0.7)' : 'none',
+  } as React.CSSProperties
+}
+
 const SEP: React.CSSProperties = {
   fontFamily: '"Cormorant Garamond", serif',
-  fontSize: 24,
-  color: 'rgba(201,169,110,0.45)',
+  fontSize: 26,
+  color: 'rgba(168,132,47,0.7)',
   fontWeight: 300,
   lineHeight: 1,
   flexShrink: 0,
-  marginBottom: 24, // space for label below digit
+  marginBottom: 30,
 }
 
 export default function Countdown() {
@@ -103,15 +123,33 @@ export default function Countdown() {
   }, [])
 
   return (
-    <section style={{ padding: '96px 16px', textAlign: 'center' }}>
+    <section style={{ padding: '96px 16px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      {/* Faint mandala backdrop */}
+      <div
+        className="mandala-bg"
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: 560,
+          height: 560,
+          marginLeft: -280,
+          marginTop: -280,
+          opacity: 0.5,
+          pointerEvents: 'none',
+        }}
+        aria-hidden
+      />
       <motion.div
         initial={{ opacity: 0, y: 30, filter: 'blur(8px)' }}
         whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         viewport={{ once: true }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        style={{ position: 'relative' }}
       >
-        <p className="section-sub" style={{ marginBottom: 16 }}>Until forever begins</p>
-        <h2 className="section-heading" style={{ marginBottom: 48 }}>Counting down to forever</h2>
+        <p className="section-sub" style={{ marginBottom: 14 }}>Until forever begins</p>
+        <h2 className="section-heading-script gold-foil" style={{ marginBottom: 8 }}>Counting down</h2>
+        <p className="font-display italic text-ink-soft text-lg" style={{ marginBottom: 48 }}>to forever</p>
 
         {/* Single row on desktop, 2×2 on mobile */}
         <div className="countdown-wrapper">

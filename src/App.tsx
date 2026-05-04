@@ -8,19 +8,53 @@ import EventCard from './components/EventCard'
 import Gallery from './components/Gallery'
 import Footer from './components/Footer'
 import BotanicalDivider from './components/BotanicalDivider'
+import AmbientScene from './components/AmbientScene'
+import CursorTrail from './components/CursorTrail'
 import { ScrollProgressTrack, ScrollIndicator, MapFAB } from './components/ScrollProgress'
 import { weddingEvent, receptionEvent } from './lib/calendar'
 
-// Venue map URL for FAB (wedding venue)
 const VENUE_MAP_URL = 'https://maps.app.goo.gl/FqXUdBE8PCmXdsFX9'
 
 export default function App() {
   const [opened, setOpened] = useState(false)
+  const [flourish, setFlourish] = useState(false)
+
+  const handleOpen = () => {
+    setOpened(true)
+    setFlourish(true)
+    setTimeout(() => setFlourish(false), 1100)
+  }
 
   return (
     <>
+      {/* Ambient layer always behind everything */}
+      <AmbientScene active={opened} />
+      <CursorTrail />
+
       <AnimatePresence>
-        {!opened && <Envelope onOpen={() => setOpened(true)} />}
+        {!opened && <Envelope onOpen={handleOpen} />}
+      </AnimatePresence>
+
+      {/* Gold flourish wash on reveal */}
+      <AnimatePresence>
+        {flourish && (
+          <motion.div
+            key="flourish"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.6, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], times: [0, 0.4, 1] }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 55,
+              pointerEvents: 'none',
+              background:
+                'radial-gradient(circle at center, rgba(242,199,106,0.85) 0%, rgba(232,210,154,0.4) 30%, transparent 70%)',
+            }}
+            aria-hidden
+          />
+        )}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -29,13 +63,13 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+            style={{ position: 'relative', zIndex: 2 }}
           >
             <Hero />
             <Countdown />
             <BotanicalDivider />
             <CoupleSection />
 
-            {/* Wedding Ceremony */}
             <section className="py-24 px-6">
               <motion.div
                 className="text-center mb-4"
@@ -59,7 +93,6 @@ export default function App() {
 
             <BotanicalDivider />
 
-            {/* Reception */}
             <section className="py-24 px-6">
               <EventCard
                 title="Wedding Reception"
@@ -75,7 +108,6 @@ export default function App() {
             <Gallery />
             <Footer />
 
-            {/* Global UI chrome */}
             <ScrollProgressTrack />
             <ScrollIndicator />
             <MapFAB mapUrl={VENUE_MAP_URL} />

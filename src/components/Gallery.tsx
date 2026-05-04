@@ -24,7 +24,7 @@ export default function Gallery() {
         transition={{ duration: 0.9 }}
       >
         <p className="section-sub mb-3">Moments captured</p>
-        <h2 className="section-heading">Our Gallery</h2>
+        <h2 className="section-heading-script gold-foil">Our Gallery</h2>
       </motion.div>
 
       {images.length === 0 ? (
@@ -75,24 +75,29 @@ export default function Gallery() {
               >
                 {/* Polaroid frame */}
                 <div
-                  className="bg-white transition-shadow duration-400 group-hover:shadow-[0_16px_40px_-10px_rgba(58,47,42,0.35)]"
+                  className="bg-white transition-shadow duration-500 group-hover:shadow-[0_22px_50px_-10px_rgba(110,31,43,0.35)] relative"
                   style={{
                     padding: '10px 10px 36px',
-                    boxShadow: '0 8px 24px -8px rgba(58,47,42,0.22), 0 2px 6px rgba(58,47,42,0.08)',
+                    boxShadow: '0 10px 28px -8px rgba(110,31,43,0.22), 0 2px 6px rgba(58,30,26,0.1)',
                   }}
                 >
-                  <div className="overflow-hidden">
+                  {/* gold inner frame on hover */}
+                  <div className="absolute inset-2 pointer-events-none transition-opacity duration-500 opacity-0 group-hover:opacity-100"
+                    style={{ boxShadow: 'inset 0 0 0 1px rgba(201,162,75,0.6), inset 0 0 18px rgba(232,210,154,0.35)' }}
+                    aria-hidden
+                  />
+                  <div className="overflow-hidden relative">
                     <img
                       src={src}
                       alt={`Wedding photo ${i + 1}`}
                       loading="lazy"
-                      className="w-full object-cover block transition-all duration-500 group-hover:scale-[1.04]"
+                      className="w-full object-cover block transition-all duration-500 group-hover:scale-[1.05]"
                       style={{
-                        filter: 'sepia(0.15) saturate(0.9)',
-                        transition: 'filter 400ms ease, transform 500ms cubic-bezier(0.22,1,0.36,1)',
+                        filter: 'sepia(0.08) saturate(0.94) contrast(1.02)',
+                        transition: 'filter 500ms ease, transform 600ms cubic-bezier(0.22,1,0.36,1)',
                       }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLImageElement).style.filter = 'sepia(0) saturate(1)' }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLImageElement).style.filter = 'sepia(0.15) saturate(0.9)' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLImageElement).style.filter = 'sepia(0) saturate(1.05) contrast(1.02)' }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLImageElement).style.filter = 'sepia(0.08) saturate(0.94) contrast(1.02)' }}
                     />
                   </div>
                 </div>

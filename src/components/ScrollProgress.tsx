@@ -39,19 +39,28 @@ export function ScrollProgressTrack() {
         >
           {/* Track */}
           <div
-            className="w-px rounded-full"
-            style={{ height: 60, background: 'rgba(201,169,110,0.15)' }}
+            className="rounded-full"
+            style={{ width: 2, height: 80, background: 'rgba(201,162,75,0.18)' }}
           >
             {/* Thumb */}
             <div
-              className="w-px rounded-full bg-gold/50 transition-all duration-150"
-              style={{ height: `${progress * 100}%` }}
+              className="rounded-full transition-all duration-150"
+              style={{
+                width: 2,
+                height: `${progress * 100}%`,
+                background: 'linear-gradient(180deg, #E8D29A, #C9A24B, #A8842F)',
+                boxShadow: '0 0 6px rgba(232,210,154,0.8)',
+              }}
             />
           </div>
           {/* Dot */}
           <div
-            className="w-1.5 h-1.5 rounded-full bg-gold/60 mt-1 transition-all duration-150"
-            style={{ marginTop: -6 + progress * 54 }}
+            className="w-2 h-2 rounded-full transition-all duration-150"
+            style={{
+              marginTop: -8 + progress * 72,
+              background: 'radial-gradient(circle, #E8D29A 0%, #A8842F 100%)',
+              boxShadow: '0 0 8px rgba(232,210,154,0.7)',
+            }}
           />
         </motion.div>
       )}
@@ -107,7 +116,13 @@ export function MapFAB({ mapUrl }: { mapUrl: string }) {
       href={mapUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-white border border-gold/25 shadow-[0_4px_20px_rgba(58,47,42,0.15)] flex items-center justify-center text-gold transition-all duration-300 hover:bg-gold hover:text-ivory hover:shadow-[0_8px_28px_rgba(201,169,110,0.35)] hover:scale-[1.07] active:scale-95"
+      className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-[1.08] active:scale-95"
+      style={{
+        background: 'linear-gradient(140deg, #8E3140 0%, #6E1F2B 100%)',
+        color: '#E8D29A',
+        border: '1px solid rgba(232,210,154,0.6)',
+        boxShadow: '0 8px 24px -4px rgba(110,31,43,0.5), 0 0 0 6px rgba(110,31,43,0.08), inset 0 1px 0 rgba(232,210,154,0.3)',
+      }}
       aria-label="View venue on map"
     >
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

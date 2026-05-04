@@ -1,54 +1,61 @@
 import { motion } from 'framer-motion'
 
-function MonogramWreath() {
+function MonogramMandala() {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 120, height: 120 }}>
-      {/* Wreath SVG */}
+    <div className="relative flex items-center justify-center" style={{ width: 160, height: 160 }}>
       <svg
-        viewBox="0 0 120 120"
-        width="120"
-        height="120"
+        viewBox="0 0 160 160"
+        width="160"
+        height="160"
         fill="none"
-        className="absolute inset-0 opacity-55"
+        className="absolute inset-0"
         aria-hidden
       >
-        {/* Left wreath arc */}
-        <path d="M22,90 C10,72 8,50 20,34" stroke="#C9A96E" strokeWidth="1" strokeLinecap="round" fill="none"/>
-        <path d="M18,86 C6,68 4,46 16,30" stroke="#C9A96E" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.5"/>
-        {/* Right wreath arc */}
-        <path d="M98,90 C110,72 112,50 100,34" stroke="#C9A96E" strokeWidth="1" strokeLinecap="round" fill="none"/>
-        <path d="M102,86 C114,68 116,46 104,30" stroke="#C9A96E" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.5"/>
-
-        {/* Left leaves */}
-        <ellipse cx="17" cy="72" rx="6" ry="3" fill="none" stroke="#A8B5A0" strokeWidth="0.8" transform="rotate(-60,17,72)" opacity="0.7"/>
-        <ellipse cx="14" cy="58" rx="6" ry="3" fill="none" stroke="#A8B5A0" strokeWidth="0.8" transform="rotate(-70,14,58)" opacity="0.6"/>
-        <ellipse cx="16" cy="44" rx="5" ry="2.5" fill="none" stroke="#A8B5A0" strokeWidth="0.8" transform="rotate(-50,16,44)" opacity="0.6"/>
-        <ellipse cx="21" cy="32" rx="5" ry="2.5" fill="none" stroke="#A8B5A0" strokeWidth="0.8" transform="rotate(-40,21,32)" opacity="0.5"/>
-
-        {/* Right leaves */}
-        <ellipse cx="103" cy="72" rx="6" ry="3" fill="none" stroke="#A8B5A0" strokeWidth="0.8" transform="rotate(60,103,72)" opacity="0.7"/>
-        <ellipse cx="106" cy="58" rx="6" ry="3" fill="none" stroke="#A8B5A0" strokeWidth="0.8" transform="rotate(70,106,58)" opacity="0.6"/>
-        <ellipse cx="104" cy="44" rx="5" ry="2.5" fill="none" stroke="#A8B5A0" strokeWidth="0.8" transform="rotate(50,104,44)" opacity="0.6"/>
-        <ellipse cx="99" cy="32" rx="5" ry="2.5" fill="none" stroke="#A8B5A0" strokeWidth="0.8" transform="rotate(40,99,32)" opacity="0.5"/>
-
-        {/* Small gold berries */}
-        <circle cx="14" cy="80" r="2" fill="#C9A96E" opacity="0.5"/>
-        <circle cx="12" cy="50" r="1.5" fill="#C9A96E" opacity="0.4"/>
-        <circle cx="106" cy="80" r="2" fill="#C9A96E" opacity="0.5"/>
-        <circle cx="108" cy="50" r="1.5" fill="#C9A96E" opacity="0.4"/>
-
-        {/* Bottom ribbon bow */}
-        <path d="M48,98 C44,102 36,104 38,100 C40,96 48,98 60,99 C72,98 80,96 82,100 C84,104 76,102 72,98"
-          stroke="#C9A96E" strokeWidth="0.9" fill="none" strokeLinecap="round"/>
-        <path d="M60,99 L60,104" stroke="#C9A96E" strokeWidth="0.8" strokeLinecap="round" opacity="0.6"/>
-
-        {/* Top arc / crown */}
-        <path d="M38,22 C48,14 72,14 82,22" stroke="#C9A96E" strokeWidth="0.8" fill="none" strokeLinecap="round" opacity="0.6"/>
-        <circle cx="60" cy="14" r="2" fill="#C9A96E" opacity="0.55"/>
+        <defs>
+          <radialGradient id="mandalaG" cx="50%" cy="50%">
+            <stop offset="0%" stopColor="#E8D29A" />
+            <stop offset="100%" stopColor="#A8842F" />
+          </radialGradient>
+        </defs>
+        {/* Concentric rings */}
+        <circle cx="80" cy="80" r="74" stroke="url(#mandalaG)" strokeWidth="0.6" opacity="0.5" />
+        <circle cx="80" cy="80" r="62" stroke="#A8842F" strokeWidth="0.7" opacity="0.6" strokeDasharray="2 3" />
+        <circle cx="80" cy="80" r="50" stroke="#A8842F" strokeWidth="0.8" opacity="0.65" />
+        {/* Petals */}
+        <g opacity="0.7">
+          {Array.from({ length: 16 }).map((_, i) => (
+            <g key={i} transform={`rotate(${(i * 360) / 16} 80 80)`}>
+              <path
+                d="M80 16 Q86 36 80 56 Q74 36 80 16 Z"
+                fill="url(#mandalaG)"
+                opacity="0.55"
+              />
+            </g>
+          ))}
+        </g>
+        {/* Inner ring with dots */}
+        <circle cx="80" cy="80" r="38" stroke="#6E1F2B" strokeWidth="0.5" opacity="0.4" />
+        {Array.from({ length: 12 }).map((_, i) => {
+          const a = (i * Math.PI * 2) / 12
+          return (
+            <circle
+              key={i}
+              cx={80 + Math.cos(a) * 38}
+              cy={80 + Math.sin(a) * 38}
+              r="1.4"
+              fill="#C9A24B"
+            />
+          )
+        })}
+        {/* Inner double circle */}
+        <circle cx="80" cy="80" r="30" stroke="#A8842F" strokeWidth="0.7" />
+        <circle cx="80" cy="80" r="27" stroke="#A8842F" strokeWidth="0.4" opacity="0.5" />
       </svg>
 
-      {/* Monogram centred inside wreath */}
-      <span className="font-script text-5xl text-gold relative z-10" style={{ lineHeight: 1 }}>
+      <span
+        className="font-script gold-foil relative z-10"
+        style={{ fontSize: 56, lineHeight: 1, filter: 'drop-shadow(0 2px 4px rgba(110,31,43,0.3))' }}
+      >
         S &amp; A
       </span>
     </div>
@@ -57,19 +64,26 @@ function MonogramWreath() {
 
 export default function Footer() {
   return (
-    <footer className="py-16 px-6 text-center border-t border-gold/20">
+    <footer className="py-20 px-6 text-center relative">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" aria-hidden />
       <motion.div
         initial={{ opacity: 0, y: 20, filter: 'blur(6px)' }}
         whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         viewport={{ once: true }}
-        transition={{ duration: 0.9 }}
-        className="flex flex-col items-center gap-5"
+        transition={{ duration: 1.1 }}
+        className="flex flex-col items-center gap-6"
       >
-        <MonogramWreath />
-        <div className="w-24 border-t border-gold/30" aria-hidden />
-        <p className="font-display italic text-ink-soft text-lg">With love, 23 . 08 . 2026</p>
-        <p className="font-body text-xs text-ink-soft/40 tracking-[0.2em] mt-1">
-          Made with love for Sangeeth &amp; Arya
+        <MonogramMandala />
+        <p className="font-script gold-foil text-3xl mt-2" style={{ lineHeight: 1.2 }}>
+          with love
+        </p>
+        <p className="font-heading text-sm tracking-[0.42em] uppercase text-maroon">
+          Sangeeth &amp; Arya
+        </p>
+        <p className="font-display italic text-ink-soft text-base">23 . 08 . 2026</p>
+        <div className="w-24 border-t border-gold/30 mt-2" aria-hidden />
+        <p className="font-body text-[10px] text-ink-soft/50 tracking-[0.28em] uppercase mt-1">
+          See you there
         </p>
       </motion.div>
     </footer>

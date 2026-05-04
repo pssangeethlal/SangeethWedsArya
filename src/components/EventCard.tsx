@@ -204,36 +204,49 @@ export default function EventCard({
 
   return (
     <motion.div
-      className="relative card-glass rounded-sm max-w-md mx-auto p-8 sm:p-10 text-center"
-      initial={{ opacity: 0, y: 30, filter: 'blur(8px)' }}
-      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+      className="relative card-glass max-w-md mx-auto p-8 sm:p-10 text-center"
+      initial={{ opacity: 0, y: 30, scaleY: 0.85, filter: 'blur(8px)' }}
+      whileInView={{ opacity: 1, y: 0, scaleY: 1, filter: 'blur(0px)' }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
       style={{
+        transformOrigin: 'top center',
+        borderRadius: 6,
         backgroundImage: `
-          radial-gradient(ellipse at top left, rgba(232,197,192,0.12) 0%, transparent 60%),
-          radial-gradient(ellipse at bottom right, rgba(168,181,160,0.08) 0%, transparent 60%)
+          radial-gradient(ellipse at top left, rgba(232,197,192,0.18) 0%, transparent 60%),
+          radial-gradient(ellipse at bottom right, rgba(168,181,160,0.12) 0%, transparent 60%),
+          linear-gradient(180deg, rgba(255,250,235,0.7) 0%, rgba(248,234,200,0.55) 100%)
         `,
+        boxShadow: '0 12px 36px -8px rgba(110,31,43,0.18), inset 0 1px 0 rgba(255,255,255,0.6)',
+        border: '1px solid rgba(201,162,75,0.45)',
       }}
     >
       {/* Deckle top border */}
-      <div className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(201,169,110,0.4) 4px, rgba(201,169,110,0.4) 5px)' }}
+      <div className="absolute top-0 left-0 right-0 h-[2px]"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(168,132,47,0.6), transparent)' }}
+        aria-hidden
+      />
+      {/* Inner border */}
+      <div className="absolute inset-2 pointer-events-none rounded-[3px]"
+        style={{ border: '1px solid rgba(168,132,47,0.3)' }}
         aria-hidden
       />
 
       {/* Wedding rings */}
       <div className="flex justify-center mb-5" aria-hidden>
-        <svg width="64" height="40" viewBox="0 0 64 40" fill="none">
-          <circle cx="23" cy="20" r="16" stroke="#C9A96E" strokeWidth="2" opacity="0.75"/>
-          <circle cx="41" cy="20" r="16" stroke="#C9A96E" strokeWidth="2" opacity="0.75"/>
-          <circle cx="23" cy="20" r="10" stroke="rgba(201,169,110,0.35)" strokeWidth="1"/>
-          <circle cx="41" cy="20" r="10" stroke="rgba(201,169,110,0.35)" strokeWidth="1"/>
+        <svg width="68" height="42" viewBox="0 0 68 42" fill="none">
+          <circle cx="25" cy="21" r="17" stroke="#A8842F" strokeWidth="1.8" opacity="0.85"/>
+          <circle cx="43" cy="21" r="17" stroke="#A8842F" strokeWidth="1.8" opacity="0.85"/>
+          <circle cx="25" cy="21" r="11" stroke="rgba(201,162,75,0.45)" strokeWidth="0.9"/>
+          <circle cx="43" cy="21" r="11" stroke="rgba(201,162,75,0.45)" strokeWidth="0.9"/>
         </svg>
       </div>
 
-      {subtitle && <p className="section-sub mb-2">{subtitle}</p>}
-      <h2 className="section-heading mb-7">{title}</h2>
+      {subtitle && <p className="section-sub mb-2" style={{ color: 'var(--maroon)' }}>{subtitle}</p>}
+      <h2 className="section-heading mb-2" style={{ color: 'var(--maroon)' }}>{title}</h2>
+      <div className="flex justify-center mb-7" aria-hidden>
+        <div className="h-px w-16 bg-gradient-to-r from-transparent via-gold to-transparent" />
+      </div>
 
       {/* Info rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28, textAlign: 'left' }}>

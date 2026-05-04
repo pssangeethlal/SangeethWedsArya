@@ -28,7 +28,11 @@ export default function Lightbox({ images, current, onClose, onPrev, onNext }: L
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, rgba(110,31,43,0.85) 0%, rgba(20,8,10,0.96) 100%)',
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -59,7 +63,11 @@ export default function Lightbox({ images, current, onClose, onPrev, onNext }: L
           key={current}
           src={images[current]}
           alt={`Gallery photo ${current + 1}`}
-          className="max-w-[90vw] max-h-[85vh] object-contain rounded-sm shadow-2xl"
+          className="max-w-[90vw] max-h-[85vh] object-contain"
+          style={{
+            border: '6px solid #FBF7F2',
+            boxShadow: '0 0 0 1px rgba(201,162,75,0.6), 0 30px 60px -10px rgba(0,0,0,0.6)',
+          }}
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}

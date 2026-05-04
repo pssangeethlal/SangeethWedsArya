@@ -1,701 +1,816 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 
 interface EnvelopeProps {
   onOpen: () => void
 }
 
-function seededRand(seed: number) {
-  const x = Math.sin(seed + 1) * 10000
+type Phase = 'idle' | 'pressing' | 'cracking' | 'flapping' | 'sliding' | 'inkWriting' | 'petals' | 'done'
+
+const ENV_W = 460
+const ENV_H = 300
+
+function rand(seed: number) {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453
   return x - Math.floor(x)
 }
 
-const PETAL_COUNT = 22
-const FRAGMENT_COUNT = 7
-const AMBIENT_COUNT = 5
+const PETAL_COLORS = ['#E0A33D', '#F2C76A', '#E8C5C0', '#B07A75', '#C9A24B', '#FAF3E7']
 
-const petals = Array.from({ length: PETAL_COUNT }, (_, i) => ({
+const petalsBurst = Array.from({ length: 32 }, (_, i) => ({
   id: i,
-  angle: (i / PETAL_COUNT) * 360 + seededRand(i) * 25,
-  distance: 90 + seededRand(i + 10) * 180,
-  size: 7 + seededRand(i + 20) * 9,
-  duration: 2.8 + seededRand(i + 30) * 3,
-  delay: seededRand(i + 40) * 0.7,
-  drift: (seededRand(i + 50) - 0.5) * 50,
-  rotation: seededRand(i + 60) * 720 - 360,
+  angle: (i / 32) * 360 + rand(i) * 22,
+  distance: 140 + rand(i + 10) * 240,
+  size: 8 + rand(i + 20) * 10,
+  duration: 2.6 + rand(i + 30) * 2.4,
+  delay: rand(i + 40) * 0.5,
+  drift: (rand(i + 50) - 0.5) * 80,
+  rotation: rand(i + 60) * 720 - 360,
+  color: PETAL_COLORS[i % PETAL_COLORS.length],
+  shape: i % 3,
 }))
 
-const fragments = Array.from({ length: FRAGMENT_COUNT }, (_, i) => ({
+const shards = Array.from({ length: 6 }, (_, i) => ({
   id: i,
-  angle: (i / FRAGMENT_COUNT) * 360 + seededRand(i + 100) * 40,
-  dist: 28 + seededRand(i + 110) * 55,
-  size: 2 + seededRand(i + 120) * 3,
+  angle: (i / 6) * 360 + rand(i + 100) * 30,
+  dist: 38 + rand(i + 110) * 60,
+  rot: rand(i + 120) * 540 - 270,
+  size: 9 + rand(i + 130) * 6,
 }))
 
-const ambientParticles = Array.from({ length: AMBIENT_COUNT }, (_, i) => ({
+const dust = Array.from({ length: 18 }, (_, i) => ({
   id: i,
-  x: 15 + seededRand(i + 200) * 70,
-  size: 2 + seededRand(i + 210) * 2,
-  duration: 7 + seededRand(i + 220) * 5,
-  delay: seededRand(i + 230) * 4,
+  x: 8 + rand(i + 200) * 84,
+  y: 60 + rand(i + 210) * 30,
+  size: 1.5 + rand(i + 220) * 2,
+  duration: 8 + rand(i + 230) * 6,
+  delay: rand(i + 240) * 5,
 }))
 
-const EXPO_OUT = [0.16, 1, 0.3, 1] as const
-const CINEMATIC = [0.65, 0, 0.35, 1] as const
-
-// ── Floral corner SVG path (drawn inline, gold stroke only) ──
-function FloralCorner({ flip }: { flip: boolean }) {
-  const s = flip ? 'scale(-1,1)' : ''
+function Petal({ p, scaleMul = 1 }: { p: typeof petalsBurst[number]; scaleMul?: number }) {
+  const rad = (p.angle * Math.PI) / 180
+  const tx = Math.cos(rad) * p.distance + p.drift
+  const ty = Math.sin(rad) * p.distance + p.distance * 0.4
   return (
-    <g transform={s} opacity="0.75">
-      {/* Main stem */}
-      <path d="M0,60 C8,48 18,36 22,18" stroke="#C9A96E" strokeWidth="1" fill="none" strokeLinecap="round" />
-      {/* Left leaf */}
-      <path d="M10,46 C4,38 2,28 10,26 C14,34 14,42 10,46Z" stroke="#C9A96E" strokeWidth="0.8" fill="none" />
-      {/* Right leaf */}
-      <path d="M16,34 C22,26 28,20 26,14 C20,18 16,26 16,34Z" stroke="#C9A96E" strokeWidth="0.8" fill="none" />
-      {/* Small bloom top */}
-      <circle cx="22" cy="14" r="4" stroke="#C9A96E" strokeWidth="0.8" fill="rgba(201,169,110,0.12)" />
-      <circle cx="22" cy="14" r="1.5" fill="#C9A96E" opacity="0.5" />
-      {/* Tiny side bloom */}
-      <circle cx="8" cy="52" r="3" stroke="#C9A96E" strokeWidth="0.7" fill="rgba(201,169,110,0.1)" />
-      {/* Curling tendril */}
-      <path d="M18,30 C24,24 28,22 26,18" stroke="#C9A96E" strokeWidth="0.6" fill="none" strokeLinecap="round" />
-    </g>
+    <motion.div
+      style={{
+        position: 'absolute',
+        left: '50%',
+        top: '50%',
+        width: p.size * scaleMul,
+        height: p.size * scaleMul * 1.4,
+        marginLeft: -(p.size * scaleMul) / 2,
+        marginTop: -(p.size * scaleMul) / 2,
+        background: `radial-gradient(ellipse at 35% 30%, ${p.color}, ${p.color}cc 65%, transparent 100%)`,
+        borderRadius: p.shape === 0 ? '50% 50% 50% 50% / 60% 60% 40% 40%' : p.shape === 1 ? '40% 60% 50% 50%' : '50%',
+        boxShadow: `0 0 6px ${p.color}66`,
+        pointerEvents: 'none',
+      }}
+      initial={{ x: 0, y: 0, opacity: 0, rotate: 0, scale: 0.4 }}
+      animate={{
+        x: tx,
+        y: ty,
+        opacity: [0, 1, 1, 0],
+        rotate: p.rotation,
+        scale: [0.4, 1, 1, 0.7],
+      }}
+      transition={{
+        duration: p.duration,
+        delay: p.delay,
+        ease: [0.16, 1, 0.3, 1],
+        times: [0, 0.15, 0.7, 1],
+      }}
+    />
+  )
+}
+
+function WaxSeal({ phase, parallax }: { phase: Phase; parallax: { x: number; y: number } }) {
+  const cracked = phase === 'cracking' || phase === 'flapping' || phase === 'sliding' || phase === 'inkWriting' || phase === 'petals' || phase === 'done'
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: '50%',
+        top: '52%',
+        width: 92,
+        height: 92,
+        marginLeft: -46,
+        marginTop: -46,
+        zIndex: 20,
+        transform: `translate(${parallax.x * 0.4}px, ${parallax.y * 0.4}px)`,
+        transition: 'transform 220ms ease-out',
+      }}
+    >
+      {/* Glow ring on idle */}
+      {phase === 'idle' && (
+        <motion.div
+          style={{
+            position: 'absolute',
+            inset: -14,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(201,162,75,0.35) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+          animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+
+      {/* Wax seal — left half */}
+      <motion.div
+        style={{ position: 'absolute', inset: 0, transformOrigin: 'right center' }}
+        animate={cracked ? { x: -shards[0].dist, y: 22, rotate: -50, opacity: 0 } : { x: 0, y: 0, rotate: 0, opacity: 1 }}
+        transition={{ duration: 0.7, ease: [0.5, 0, 0.7, 1] }}
+      >
+        <svg viewBox="0 0 92 92" width="92" height="92" style={{ overflow: 'visible' }}>
+          <defs>
+            <radialGradient id="waxL" cx="38%" cy="32%" r="70%">
+              <stop offset="0%" stopColor="#C8443B" />
+              <stop offset="55%" stopColor="#8E1F26" />
+              <stop offset="100%" stopColor="#4A0F14" />
+            </radialGradient>
+            <filter id="waxBevel">
+              <feGaussianBlur stdDeviation="1.5" />
+            </filter>
+          </defs>
+          <clipPath id="leftHalf">
+            <rect x="0" y="0" width="46" height="92" />
+          </clipPath>
+          <g clipPath="url(#leftHalf)">
+            {/* Irregular blob shape */}
+            <path
+              d="M46,8 C28,8 12,22 8,42 C6,56 14,76 28,84 C36,88 46,86 46,86 Z"
+              fill="url(#waxL)"
+            />
+            {/* Highlight */}
+            <path
+              d="M22,22 C16,28 14,38 18,46"
+              stroke="rgba(255,180,160,0.35)"
+              strokeWidth="3"
+              fill="none"
+              strokeLinecap="round"
+              filter="url(#waxBevel)"
+            />
+          </g>
+        </svg>
+      </motion.div>
+
+      {/* Wax seal — right half */}
+      <motion.div
+        style={{ position: 'absolute', inset: 0, transformOrigin: 'left center' }}
+        animate={cracked ? { x: shards[1].dist, y: 22, rotate: 50, opacity: 0 } : { x: 0, y: 0, rotate: 0, opacity: 1 }}
+        transition={{ duration: 0.7, ease: [0.5, 0, 0.7, 1] }}
+      >
+        <svg viewBox="0 0 92 92" width="92" height="92" style={{ overflow: 'visible' }}>
+          <defs>
+            <radialGradient id="waxR" cx="38%" cy="32%" r="70%">
+              <stop offset="0%" stopColor="#C8443B" />
+              <stop offset="55%" stopColor="#8E1F26" />
+              <stop offset="100%" stopColor="#4A0F14" />
+            </radialGradient>
+          </defs>
+          <clipPath id="rightHalf">
+            <rect x="46" y="0" width="46" height="92" />
+          </clipPath>
+          <g clipPath="url(#rightHalf)">
+            <path
+              d="M46,8 C64,8 80,22 84,42 C86,56 78,76 64,84 C56,88 46,86 46,86 Z"
+              fill="url(#waxR)"
+            />
+            <path
+              d="M70,22 C76,28 78,38 74,46"
+              stroke="rgba(60,0,8,0.45)"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+            />
+          </g>
+        </svg>
+      </motion.div>
+
+      {/* Monogram on top */}
+      <motion.div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+        }}
+        animate={cracked ? { opacity: 0, scale: 0.6 } : { opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <span
+          className="gold-foil"
+          style={{
+            fontFamily: '"Pinyon Script", cursive',
+            fontSize: 38,
+            lineHeight: 1,
+            transform: 'translateY(2px)',
+            filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))',
+          }}
+        >
+          S&amp;A
+        </span>
+      </motion.div>
+
+      {/* Shards burst on crack */}
+      {cracked && shards.slice(2).map((s) => {
+        const rad = (s.angle * Math.PI) / 180
+        const tx = Math.cos(rad) * s.dist
+        const ty = Math.sin(rad) * s.dist + 30
+        return (
+          <motion.div
+            key={s.id}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: s.size,
+              height: s.size * 0.8,
+              marginLeft: -s.size / 2,
+              marginTop: -s.size / 2,
+              background: 'radial-gradient(circle at 30% 30%, #C8443B, #4A0F14)',
+              borderRadius: '40% 60% 50% 50%',
+              pointerEvents: 'none',
+            }}
+            initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
+            animate={{ x: tx, y: ty, opacity: 0, rotate: s.rot }}
+            transition={{ duration: 0.9, ease: [0.5, 0, 0.7, 1] }}
+          />
+        )
+      })}
+
+      {/* Crack flash */}
+      {cracked && (
+        <motion.div
+          style={{
+            position: 'absolute',
+            inset: -20,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,220,140,0.9) 0%, transparent 65%)',
+            pointerEvents: 'none',
+          }}
+          initial={{ opacity: 0, scale: 0.3 }}
+          animate={{ opacity: [0, 1, 0], scale: [0.3, 1.4, 1.6] }}
+          transition={{ duration: 0.55, ease: 'easeOut' }}
+        />
+      )}
+    </div>
+  )
+}
+
+function LetterCard({ phase, reduced }: { phase: Phase; reduced: boolean }) {
+  const visible = phase === 'sliding' || phase === 'inkWriting' || phase === 'petals'
+  const inkActive = phase === 'inkWriting' || phase === 'petals'
+
+  return (
+    <motion.div
+      style={{
+        position: 'absolute',
+        left: '50%',
+        top: '50%',
+        width: ENV_W * 0.86,
+        height: ENV_H * 1.05,
+        marginLeft: -(ENV_W * 0.86) / 2,
+        marginTop: -(ENV_H * 1.05) / 2,
+        background: 'linear-gradient(135deg, #FBF3DF 0%, #F5E8C8 100%)',
+        boxShadow: '0 18px 50px -8px rgba(58,30,26,0.45), 0 4px 14px rgba(58,30,26,0.2), inset 0 0 80px rgba(110,31,43,0.05)',
+        border: '1px solid rgba(201,162,75,0.5)',
+        borderRadius: 4,
+        zIndex: 14,
+        transformOrigin: 'bottom center',
+      }}
+      initial={{ y: 30, opacity: 0, scale: 0.92 }}
+      animate={
+        visible
+          ? { y: -ENV_H * 0.55, opacity: 1, scale: 1, filter: 'blur(0px)' }
+          : { y: 30, opacity: 0, scale: 0.92 }
+      }
+      transition={{ duration: reduced ? 0.2 : 1.0, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {/* Inner gold border */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 12,
+          border: '1px solid rgba(168,132,47,0.55)',
+          borderRadius: 2,
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 16,
+          border: '0.5px solid rgba(168,132,47,0.3)',
+          borderRadius: 1,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Decorative paisley corners */}
+      {[
+        { top: 14, left: 14, rot: 0 },
+        { top: 14, right: 14, rot: 90 },
+        { bottom: 14, right: 14, rot: 180 },
+        { bottom: 14, left: 14, rot: 270 },
+      ].map((c, i) => (
+        <svg
+          key={i}
+          width="34"
+          height="34"
+          viewBox="0 0 34 34"
+          style={{ position: 'absolute', ...c, transform: `rotate(${c.rot}deg)` }}
+          aria-hidden
+        >
+          <path
+            d="M2 2 Q14 4 18 14 Q22 22 14 28 M2 2 Q4 12 12 14 M2 2 L8 2 M2 2 L2 8"
+            stroke="#A8842F"
+            strokeWidth="0.8"
+            fill="none"
+            strokeLinecap="round"
+            opacity="0.7"
+          />
+          <circle cx="14" cy="28" r="1.5" fill="#C9A24B" opacity="0.8" />
+        </svg>
+      ))}
+
+      {/* Content */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 14,
+          padding: '40px 30px',
+          textAlign: 'center',
+        }}
+      >
+        <p
+          style={{
+            fontFamily: 'Marcellus, serif',
+            fontSize: 11,
+            letterSpacing: '0.42em',
+            textTransform: 'uppercase',
+            color: 'rgba(110,31,43,0.7)',
+          }}
+        >
+          You are invited
+        </p>
+
+        <div style={{ width: 60, height: 1, background: 'rgba(168,132,47,0.5)' }} />
+
+        {/* Names — ink writing */}
+        <div style={{ position: 'relative', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <motion.span
+            className="gold-foil"
+            style={{
+              fontFamily: '"Pinyon Script", cursive',
+              fontSize: 56,
+              lineHeight: 1,
+              filter: 'drop-shadow(0 2px 3px rgba(110,31,43,0.18))',
+            }}
+            initial={{ opacity: 0, y: 6, clipPath: 'inset(0 100% 0 0)' }}
+            animate={
+              inkActive
+                ? { opacity: 1, y: 0, clipPath: 'inset(0 0% 0 0)' }
+                : { opacity: 0, y: 6, clipPath: 'inset(0 100% 0 0)' }
+            }
+            transition={{ duration: reduced ? 0.2 : 1.2, ease: [0.22, 1, 0.36, 1] }}
+          >
+            Sangeeth &amp; Arya
+          </motion.span>
+        </div>
+
+        {/* Underline draw */}
+        <svg width="180" height="10" viewBox="0 0 180 10" aria-hidden>
+          <motion.path
+            d="M2 5 Q40 1 90 5 T178 5"
+            stroke="#A8842F"
+            strokeWidth="1.2"
+            fill="none"
+            strokeLinecap="round"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={inkActive ? { pathLength: 1, opacity: 0.9 } : { pathLength: 0, opacity: 0 }}
+            transition={{ duration: reduced ? 0.2 : 0.9, delay: reduced ? 0 : 0.7, ease: 'easeInOut' }}
+          />
+        </svg>
+
+        <motion.p
+          style={{
+            fontFamily: 'Marcellus, serif',
+            fontSize: 13,
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'var(--maroon)',
+            marginTop: 6,
+          }}
+          initial={{ opacity: 0 }}
+          animate={inkActive ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.5, delay: reduced ? 0 : 1.2 }}
+        >
+          23 . 08 . 2026
+        </motion.p>
+      </div>
+    </motion.div>
   )
 }
 
 export default function Envelope({ onOpen }: EnvelopeProps) {
-  const [phase, setPhase] = useState<
-    'idle' | 'pressing' | 'cracking' | 'flapping' | 'sliding' | 'petals' | 'done'
-  >('idle')
-  const [attentionMode, setAttentionMode] = useState(false)
-  const shouldReduceMotion = useReducedMotion()
-
-  // Trigger attention mode after 2s
-  useEffect(() => {
-    const t = setTimeout(() => setAttentionMode(true), 2000)
-    return () => clearTimeout(t)
-  }, [])
-
-  // Mouse parallax
+  const [phase, setPhase] = useState<Phase>('idle')
+  const [parallax, setParallax] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
-  const [tilt, setTilt] = useState({ x: 0, y: 0 })
-  const [sealShift, setSealShift] = useState({ x: 0, y: 0 })
+  const reduced = useReducedMotion() ?? false
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (shouldReduceMotion || phase !== 'idle') return
-      const rect = containerRef.current?.getBoundingClientRect()
-      if (!rect) return
-      const nx = (e.clientX - rect.left) / rect.width - 0.5
-      const ny = (e.clientY - rect.top) / rect.height - 0.5
-      setTilt({ x: nx, y: ny })
-      setSealShift({ x: nx * 4, y: ny * 4 })
-    },
-    [shouldReduceMotion, phase]
-  )
+  const stage = useMemo(() => petalsBurst, [])
 
-  const handleMouseLeave = useCallback(() => {
-    setTilt({ x: 0, y: 0 })
-    setSealShift({ x: 0, y: 0 })
-  }, [])
+  const onMove = useCallback((e: React.MouseEvent) => {
+    if (phase !== 'idle' || reduced) return
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const px = (e.clientX - (rect.left + rect.width / 2)) / rect.width
+    const py = (e.clientY - (rect.top + rect.height / 2)) / rect.height
+    setParallax({ x: px * 18, y: py * 14 })
+  }, [phase, reduced])
+
+  const onLeave = useCallback(() => setParallax({ x: 0, y: 0 }), [])
 
   const handleOpen = useCallback(() => {
     if (phase !== 'idle') return
-    setAttentionMode(false)
-    setPhase('pressing')
-    setTimeout(() => setPhase('cracking'),  160)  // wax cracks
-    setTimeout(() => setPhase('flapping'),  620)  // flap begins rotating
-    setTimeout(() => setPhase('sliding'),  1700)  // card slides up (after flap fully opens ~1.2s)
-    setTimeout(() => setPhase('petals'),   2400)  // petals burst
-    setTimeout(() => {
+    if (reduced) {
       setPhase('done')
-      onOpen()
-    }, shouldReduceMotion ? 300 : 4000)
-  }, [phase, onOpen, shouldReduceMotion])
+      setTimeout(onOpen, 260)
+      return
+    }
+    setPhase('pressing')
+    setTimeout(() => setPhase('cracking'), 120)
+    setTimeout(() => setPhase('flapping'), 600)
+    setTimeout(() => setPhase('sliding'), 1200)
+    setTimeout(() => setPhase('inkWriting'), 2150)
+    setTimeout(() => setPhase('petals'), 2800)
+    setTimeout(() => setPhase('done'), 4400)
+    setTimeout(onOpen, 4800)
+  }, [phase, reduced, onOpen])
 
-  const glowOpacity =
-    phase === 'idle' || phase === 'pressing' ? 0.35
-      : phase === 'cracking' || phase === 'flapping' || phase === 'sliding' ? 0.95
-        : phase === 'petals' ? 0.65
-          : 0.35
+  // Initial loading reveal
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), reduced ? 50 : 700)
+    return () => clearTimeout(t)
+  }, [reduced])
 
-  const sealCracked = phase !== 'idle' && phase !== 'pressing'
-  const flapOpen = ['flapping', 'sliding', 'petals', 'done'].includes(phase)
-  const cardSliding = ['sliding', 'petals', 'done'].includes(phase)
-  const showPetals = ['petals', 'done'].includes(phase)
-  const showPrompt = phase === 'idle'
+  const flapOpen = phase === 'flapping' || phase === 'sliding' || phase === 'inkWriting' || phase === 'petals' || phase === 'done'
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center z-50 overflow-hidden">
-      {/* Paper grain */}
-      <svg className="fixed inset-0 w-full h-full pointer-events-none opacity-[0.04] mix-blend-multiply z-0" aria-hidden>
-        <filter id="env-paper">
-          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#env-paper)" />
-      </svg>
-
-      {/* Radial glow */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none z-0"
-        animate={{ opacity: glowOpacity }}
-        transition={{ duration: 1.4, ease: 'easeInOut' }}
-        style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, #FFE8D6 0%, transparent 72%)' }}
+    <motion.div
+      ref={containerRef}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 60,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'radial-gradient(ellipse at center, #2a1a16 0%, #0f0807 75%)',
+        overflow: 'hidden',
+        perspective: 1600,
+      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8 }}
+    >
+      {/* Vignette mandala */}
+      <div
+        className="mandala-bg"
+        style={{
+          position: 'absolute',
+          inset: '-10%',
+          opacity: 0.35,
+          pointerEvents: 'none',
+          filter: 'blur(0.5px) sepia(0.3) hue-rotate(-15deg) saturate(1.5)',
+        }}
         aria-hidden
       />
 
-      {/* Ambient specks */}
-      {!shouldReduceMotion && (
-        <div className="fixed inset-0 pointer-events-none z-0" aria-hidden>
-          {ambientParticles.map((p) => (
-            <motion.div
-              key={p.id}
-              className="absolute rounded-full"
-              style={{
-                left: `${p.x}%`, bottom: 0,
-                width: p.size, height: p.size,
-                background: 'radial-gradient(circle, rgba(201,169,110,0.75) 0%, transparent 100%)',
-              }}
-              animate={{ y: [0, -700], opacity: [0, 0.55, 0] }}
-              transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'linear' }}
-            />
-          ))}
-        </div>
-      )}
+      {/* Ambient gold dust inside envelope scene */}
+      {!reduced && dust.map((d) => (
+        <motion.div
+          key={d.id}
+          style={{
+            position: 'absolute',
+            left: `${d.x}%`,
+            bottom: `${d.y}%`,
+            width: d.size,
+            height: d.size,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, #F2C76A 0%, transparent 70%)',
+            boxShadow: '0 0 8px #E8D29A',
+            pointerEvents: 'none',
+          }}
+          animate={{
+            y: [-20, -200, -380],
+            x: [0, 12, -10, 6],
+            opacity: [0, 0.7, 0.7, 0],
+          }}
+          transition={{
+            duration: d.duration,
+            delay: d.delay,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
 
-      <LoadingScreen />
-
-      <AnimatePresence>
-        {phase !== 'done' && (
+      {/* Envelope scene */}
+      <motion.div
+        style={{
+          position: 'relative',
+          width: `min(${ENV_W}px, 92vw)`,
+          height: `min(${ENV_H}px, 60vw)`,
+          maxWidth: ENV_W,
+          maxHeight: ENV_H,
+          transformStyle: 'preserve-3d',
+          cursor: phase === 'idle' ? 'pointer' : 'default',
+        }}
+        initial={{ opacity: 0, scale: 0.85, rotateX: 18 }}
+        animate={
+          ready
+            ? phase === 'done'
+              ? { opacity: 0, scale: 1.05, y: -40 }
+              : {
+                  opacity: 1,
+                  scale: 1,
+                  rotateX: parallax.y * -0.3,
+                  rotateY: parallax.x * 0.3,
+                }
+            : { opacity: 0, scale: 0.85, rotateX: 18 }
+        }
+        transition={{ duration: phase === 'done' ? 0.7 : 0.9, ease: [0.22, 1, 0.36, 1] }}
+        onClick={handleOpen}
+      >
+        {/* Soft attention bounce on idle */}
+        {phase === 'idle' && !reduced && (
           <motion.div
-            className="flex flex-col items-center gap-6 z-10"
-            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -16 }}
-            transition={{ duration: 0.8, ease: EXPO_OUT }}
+            style={{ position: 'absolute', inset: 0 }}
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+          />
+        )}
+
+        {/* Drop shadow under envelope */}
+        <div
+          style={{
+            position: 'absolute',
+            left: '5%',
+            right: '5%',
+            bottom: -28,
+            height: 28,
+            background: 'radial-gradient(ellipse, rgba(0,0,0,0.55) 0%, transparent 70%)',
+            filter: 'blur(8px)',
+            pointerEvents: 'none',
+          }}
+          aria-hidden
+        />
+
+        {/* Envelope body (back / interior) */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(150deg, #FBF3DF 0%, #EDD9A8 50%, #D8B970 100%)',
+            borderRadius: 4,
+            boxShadow: 'inset 0 0 60px rgba(110,31,43,0.1), 0 12px 30px rgba(0,0,0,0.45)',
+          }}
+          aria-hidden
+        />
+
+        {/* Subtle paper texture */}
+        <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>
+          <defs>
+            <filter id="paperFiber">
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" />
+              <feColorMatrix values="0 0 0 0 0.65  0 0 0 0 0.55  0 0 0 0 0.35  0 0 0 0.18 0" />
+            </filter>
+          </defs>
+        </svg>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'url(#paperFiber)',
+            mixBlendMode: 'overlay',
+            opacity: 0.4,
+            borderRadius: 4,
+            pointerEvents: 'none',
+          }}
+          aria-hidden
+        />
+
+        {/* Letter card slides out from inside */}
+        <LetterCard phase={phase} reduced={reduced} />
+
+        {/* Bottom V flap (front-facing, in front of letter) */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: '60%',
+            background: 'linear-gradient(165deg, #F2DDA7 0%, #D8B970 60%, #B8943E 100%)',
+            clipPath: 'polygon(0 100%, 100% 100%, 100% 0, 50% 60%, 0 0)',
+            zIndex: 18,
+            boxShadow: 'inset 0 -2px 8px rgba(110,31,43,0.18)',
+          }}
+          aria-hidden
+        />
+
+        {/* Side flaps */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0, top: 0, bottom: 0,
+            width: '50%',
+            background: 'linear-gradient(90deg, #E8CE8A 0%, #C9A24B 100%)',
+            clipPath: 'polygon(0 0, 0 100%, 100% 50%)',
+            zIndex: 17,
+            opacity: 0.85,
+          }}
+          aria-hidden
+        />
+        <div
+          style={{
+            position: 'absolute',
+            right: 0, top: 0, bottom: 0,
+            width: '50%',
+            background: 'linear-gradient(270deg, #E8CE8A 0%, #C9A24B 100%)',
+            clipPath: 'polygon(100% 0, 100% 100%, 0 50%)',
+            zIndex: 17,
+            opacity: 0.85,
+          }}
+          aria-hidden
+        />
+
+        {/* TOP triangular flap (this is what opens) */}
+        <motion.div
+          style={{
+            position: 'absolute',
+            left: 0, right: 0, top: 0,
+            height: '60%',
+            background: 'linear-gradient(180deg, #F5E2A8 0%, #D8B970 70%, #B8943E 100%)',
+            clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+            transformOrigin: 'top center',
+            transformStyle: 'preserve-3d',
+            zIndex: 22,
+            boxShadow: 'inset 0 4px 14px rgba(110,31,43,0.2), 0 4px 8px rgba(0,0,0,0.25)',
+          }}
+          animate={{
+            rotateX: flapOpen ? -178 : 0,
+          }}
+          transition={{ duration: reduced ? 0.2 : 0.85, ease: [0.34, 1.56, 0.64, 1], delay: phase === 'cracking' ? 0.2 : 0 }}
+        >
+          {/* Inner side of flap (visible when open) */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(180deg, #FBF3DF 0%, #F0DCA8 100%)',
+              clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+              transform: 'rotateX(180deg)',
+              backfaceVisibility: 'hidden',
+            }}
+            aria-hidden
+          />
+          {/* Outer flap deckle */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'repeating-linear-gradient(45deg, transparent 0 8px, rgba(110,31,43,0.04) 8px 9px)',
+              clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+              pointerEvents: 'none',
+            }}
+            aria-hidden
+          />
+        </motion.div>
+
+        {/* Wax seal — sits on the flap join */}
+        <WaxSeal phase={phase} parallax={parallax} />
+
+        {/* Calligraphic addressing — on envelope front above flap point */}
+        <motion.div
+          style={{
+            position: 'absolute',
+            top: '14%',
+            left: 0,
+            right: 0,
+            textAlign: 'center',
+            zIndex: 16,
+            pointerEvents: 'none',
+          }}
+          animate={{ opacity: phase === 'idle' || phase === 'pressing' ? 1 : 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <p
+            style={{
+              fontFamily: '"Pinyon Script", cursive',
+              fontSize: 'clamp(20px, 4.5vw, 30px)',
+              color: '#6E1F2B',
+              opacity: 0.78,
+              margin: 0,
+              filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))',
+            }}
+          >
+            To you, with love
+          </p>
+        </motion.div>
+
+        {/* Petal burst layer — at envelope center */}
+        {(phase === 'petals' || phase === 'done') &&
+          stage.map((p) => <Petal key={p.id} p={p} />)}
+      </motion.div>
+
+      {/* Tap prompt */}
+      <AnimatePresence>
+        {phase === 'idle' && (
+          <motion.div
+            style={{
+              position: 'absolute',
+              bottom: '11%',
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              pointerEvents: 'none',
+            }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
           >
             <motion.p
-              className="font-display italic text-ink-soft text-lg tracking-wide"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.1, duration: 0.8 }}
-            >
-              You're invited to celebrate
-            </motion.p>
-
-            {/* Envelope container */}
-            <motion.div
-              ref={containerRef}
-              className="relative cursor-pointer select-none"
-              style={{ width: 'clamp(270px, 82vw, 430px)', perspective: 1500, perspectiveOrigin: '50% 50%' }}
-              initial={{ opacity: 0, y: 28 }}
-              animate={{
-                opacity: 1,
-                y: attentionMode && !shouldReduceMotion && phase === 'idle'
-                  ? [0, -7, 2, -4, 0]
-                  : 0,
+              style={{
+                fontFamily: 'Marcellus, serif',
+                fontSize: 11,
+                letterSpacing: '0.45em',
+                textTransform: 'uppercase',
+                color: '#E8D29A',
               }}
-              transition={attentionMode && phase === 'idle'
-                ? { y: { duration: 2.8, ease: 'easeInOut', repeat: Infinity, repeatDelay: 1 }, opacity: { delay: 1.0, duration: 0.9, ease: EXPO_OUT } }
-                : { delay: 1.0, duration: 0.9, ease: EXPO_OUT }
-              }
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              onClick={handleOpen}
-              role="button"
-              aria-label="Open the wedding invitation"
+              animate={{ opacity: [0.55, 1, 0.55] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <motion.div
-                style={{ transformStyle: 'preserve-3d' }}
-                animate={shouldReduceMotion ? {} : { rotateY: tilt.x * 8, rotateX: tilt.y * -8 }}
-                transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
-              >
-                <svg
-                  viewBox="0 0 430 290"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-full"
-                  style={{ filter: 'drop-shadow(0 16px 48px rgba(58,47,42,0.2)) drop-shadow(0 4px 10px rgba(58,47,42,0.12))' }}
-                >
-                  <defs>
-                    {/* Deckle edge filter */}
-                    <filter id="deckle" x="-5%" y="-10%" width="110%" height="120%">
-                      <feTurbulence type="fractalNoise" baseFrequency="0.04 0.08" numOctaves="3" seed="12" result="noise" />
-                      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.5" xChannelSelector="R" yChannelSelector="G" />
-                    </filter>
-
-                    {/* Wax: deep convex gold-red */}
-                    <radialGradient id="waxGrad" cx="33%" cy="28%" r="68%">
-                      <stop offset="0%" stopColor="#C8423B" />
-                      <stop offset="40%" stopColor="#A2302A" />
-                      <stop offset="100%" stopColor="#6B1F1A" />
-                    </radialGradient>
-
-                    {/* Wax sheen */}
-                    <radialGradient id="waxSheen" cx="28%" cy="22%" r="38%">
-                      <stop offset="0%" stopColor="rgba(255,255,255,0.18)" />
-                      <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-                    </radialGradient>
-
-                    {/* Envelope body gradient */}
-                    <linearGradient id="envBody" x1="0" y1="0" x2="0.4" y2="1">
-                      <stop offset="0%" stopColor="#FDFAF6" />
-                      <stop offset="100%" stopColor="#F0E6D8" />
-                    </linearGradient>
-
-                    {/* Flap gradient */}
-                    <linearGradient id="flapGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#FEFCF8" />
-                      <stop offset="100%" stopColor="#F4EAE0" />
-                    </linearGradient>
-
-                    {/* Inner shimmer on envelope body */}
-                    <linearGradient id="envShimmer" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="rgba(201,169,110,0.12)" />
-                      <stop offset="50%" stopColor="rgba(201,169,110,0)" />
-                      <stop offset="100%" stopColor="rgba(232,197,192,0.08)" />
-                    </linearGradient>
-
-                    {/* Left flap gradient */}
-                    <linearGradient id="leftFlap" x1="0" y1="0.5" x2="1" y2="0.5">
-                      <stop offset="0%" stopColor="#F5EDE0" />
-                      <stop offset="100%" stopColor="#EDE3D5" />
-                    </linearGradient>
-
-                    {/* Right flap gradient */}
-                    <linearGradient id="rightFlap" x1="1" y1="0.5" x2="0" y2="0.5">
-                      <stop offset="0%" stopColor="#F5EDE0" />
-                      <stop offset="100%" stopColor="#EDE3D5" />
-                    </linearGradient>
-
-                    {/* Bottom flap gradient */}
-                    <linearGradient id="bottomFlap" x1="0.5" y1="0" x2="0.5" y2="1">
-                      <stop offset="0%" stopColor="#EDE3D4" />
-                      <stop offset="100%" stopColor="#E5D8C8" />
-                    </linearGradient>
-
-                    {/* Interior warm lining gradient — glows when flap opens */}
-                    <linearGradient id="interiorGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-                      <stop offset="0%" stopColor="#FFF0DC" stopOpacity="0.95"/>
-                      <stop offset="50%" stopColor="#FAF0E0" stopOpacity="0.7"/>
-                      <stop offset="100%" stopColor="#F5E8D0" stopOpacity="0.3"/>
-                    </linearGradient>
-
-                    {/* Botanical sprig (shown on back of flap) */}
-                    <g id="botanical">
-                      <path d="M215 108 C218 96 228 90 224 80" stroke="#C9A96E" strokeWidth="0.9" fill="none" strokeLinecap="round"/>
-                      <ellipse cx="226" cy="83" rx="5.5" ry="3" fill="none" stroke="#C9A96E" strokeWidth="0.8" transform="rotate(-30 226 83)"/>
-                      <path d="M215 108 C212 95 202 88 205 77" stroke="#C9A96E" strokeWidth="0.9" fill="none" strokeLinecap="round"/>
-                      <ellipse cx="202" cy="80" rx="5.5" ry="3" fill="none" stroke="#C9A96E" strokeWidth="0.8" transform="rotate(30 202 80)"/>
-                      <path d="M215 108 C220 94 237 87 238 73" stroke="#C9A96E" strokeWidth="0.75" fill="none" strokeLinecap="round"/>
-                      <ellipse cx="239" cy="76" rx="4" ry="2.5" fill="none" stroke="#C9A96E" strokeWidth="0.7" transform="rotate(-42 239 76)"/>
-                      <path d="M215 108 C210 93 193 84 191 70" stroke="#C9A96E" strokeWidth="0.75" fill="none" strokeLinecap="round"/>
-                      <ellipse cx="189" cy="73" rx="4" ry="2.5" fill="none" stroke="#C9A96E" strokeWidth="0.7" transform="rotate(42 189 73)"/>
-                      <circle cx="215" cy="108" r="2" fill="rgba(201,169,110,0.4)" />
-                    </g>
-                  </defs>
-
-                  {/* ── LAYER 1: Inner card — rises dramatically ── */}
-                  <motion.g
-                    animate={cardSliding
-                      ? { translateY: -72, opacity: 1 }
-                      : { translateY: 0, opacity: 0 }}
-                    transition={{ duration: 1.1, ease: EXPO_OUT, delay: 0.15 }}
-                  >
-                    {/* Card shadow beneath */}
-                    <ellipse cx="215" cy="298" rx="130" ry="8"
-                      fill="rgba(58,47,42,0.12)" style={{ filter: 'blur(6px)' }}
-                    />
-                    {/* Card body */}
-                    <rect x="55" y="88" width="320" height="210" rx="3"
-                      fill="#FEFCF8"
-                      stroke="rgba(201,169,110,0.5)" strokeWidth="1"
-                    />
-                    {/* Inner double border */}
-                    <rect x="63" y="96" width="304" height="194" rx="1"
-                      fill="none" stroke="rgba(201,169,110,0.22)" strokeWidth="0.8"
-                    />
-                    {/* Corner flourishes */}
-                    <path d="M63,110 L63,96 L77,96" fill="none" stroke="rgba(201,169,110,0.45)" strokeWidth="0.8" strokeLinecap="round"/>
-                    <path d="M353,110 L353,96 L339,96" fill="none" stroke="rgba(201,169,110,0.45)" strokeWidth="0.8" strokeLinecap="round"/>
-                    <path d="M63,278 L63,290 L77,290" fill="none" stroke="rgba(201,169,110,0.45)" strokeWidth="0.8" strokeLinecap="round"/>
-                    <path d="M353,278 L353,290 L339,290" fill="none" stroke="rgba(201,169,110,0.45)" strokeWidth="0.8" strokeLinecap="round"/>
-                    {/* Names */}
-                    <text x="215" y="158" fontFamily="Pinyon Script, cursive" fontSize="28" textAnchor="middle" fill="rgba(107,95,84,0.35)">Sangeeth</text>
-                    <text x="215" y="186" fontFamily="Pinyon Script, cursive" fontSize="18" textAnchor="middle" fill="rgba(201,169,110,0.4)">&amp;</text>
-                    <text x="215" y="215" fontFamily="Pinyon Script, cursive" fontSize="28" textAnchor="middle" fill="rgba(107,95,84,0.35)">Arya</text>
-                    {/* Date */}
-                    <text x="215" y="248" fontFamily="Cormorant Garamond, serif" fontSize="10" textAnchor="middle"
-                      fill="rgba(201,169,110,0.55)" letterSpacing="4">23 · 08 · 2026</text>
-                    {/* Small divider */}
-                    <line x1="175" y1="233" x2="255" y2="233" stroke="rgba(201,169,110,0.3)" strokeWidth="0.6"/>
-                  </motion.g>
-
-                  {/* ── LAYER 2: Envelope back panel ── */}
-                  <rect x="2" y="90" width="426" height="198" rx="4" fill="url(#envBody)" stroke="#C9A96E" strokeWidth="1.2" />
-                  {/* Shimmer overlay */}
-                  <rect x="2" y="90" width="426" height="198" rx="4" fill="url(#envShimmer)" />
-                  {/* Inner gold inset */}
-                  <rect x="8" y="96" width="414" height="186" rx="2" fill="none" stroke="rgba(201,169,110,0.18)" strokeWidth="0.8" />
-
-                  {/* ── LAYER 3: Left flap ── */}
-                  <path d="M2 94 L2 288 L215 200 Z" fill="url(#leftFlap)" />
-                  <path d="M2 94 L2 288 L215 200 Z" fill="none" stroke="#C9A96E" strokeWidth="0.9" />
-                  <path d="M7 102 L7 276 L211 200 Z" fill="none" stroke="rgba(201,169,110,0.2)" strokeWidth="0.6" />
-
-                  {/* ── LAYER 3: Right flap ── */}
-                  <path d="M428 94 L428 288 L215 200 Z" fill="url(#rightFlap)" />
-                  <path d="M428 94 L428 288 L215 200 Z" fill="none" stroke="#C9A96E" strokeWidth="0.9" />
-                  <path d="M423 102 L423 276 L219 200 Z" fill="none" stroke="rgba(201,169,110,0.2)" strokeWidth="0.6" />
-
-                  {/* ── LAYER 3: Bottom flap ── */}
-                  <path d="M2 288 L215 200 L428 288 Z" fill="url(#bottomFlap)" />
-                  <path d="M2 288 L215 200 L428 288 Z" fill="none" stroke="#C9A96E" strokeWidth="0.9" />
-
-                  {/* ── Interior warm lining — glows as flap opens ── */}
-                  <motion.rect
-                    x="2" y="90" width="426" height="198" rx="4"
-                    fill="url(#interiorGrad)"
-                    animate={flapOpen ? { opacity: 1 } : { opacity: 0 }}
-                    transition={{ duration: 0.8, delay: 0.4 }}
-                  />
-
-                  {/* ── Flap lift shadow — appears as wax cracks, before flap completes ── */}
-                  <motion.ellipse
-                    cx="215" cy="92" rx="160" ry="10"
-                    fill="rgba(58,47,42,0.18)"
-                    style={{ filter: 'blur(8px)' }}
-                    animate={
-                      sealCracked && !flapOpen
-                        ? { opacity: 1, scaleX: 1 }
-                        : { opacity: 0, scaleX: 0.5 }
-                    }
-                    transition={{ duration: 0.5 }}
-                  />
-
-                  {/* Calligraphy address — only on closed envelope */}
-                  <AnimatePresence>
-                    {!flapOpen && (
-                      <motion.g
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.55 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.5 }}
-                        transform="rotate(-2, 310, 248)"
-                      >
-                        <text x="310" y="248" fontFamily="Pinyon Script, cursive" fontSize="14" textAnchor="middle" fill="#6B5D54">To our beloved guest</text>
-                        <text x="310" y="268" fontFamily="Pinyon Script, cursive" fontSize="11.5" textAnchor="middle" fill="#6B5D54">with love, S &amp; A</text>
-                      </motion.g>
-                    )}
-                  </AnimatePresence>
-
-                  {/* ── Floral corners on envelope face ── */}
-                  <AnimatePresence>
-                    {!flapOpen && (
-                      <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
-                        {/* Top-left */}
-                        <g transform="translate(16, 98)">
-                          <FloralCorner flip={false} />
-                        </g>
-                        {/* Top-right */}
-                        <g transform="translate(414, 98) scale(-1,1)">
-                          <FloralCorner flip={true} />
-                        </g>
-                      </motion.g>
-                    )}
-                  </AnimatePresence>
-
-                  {/* ── LAYER 4: Top flap (3D opens) ── */}
-                  <motion.g
-                    style={{ transformOrigin: '215px 90px', transformBox: 'fill-box' }}
-                    animate={flapOpen ? { rotateX: -180 } : { rotateX: 0 }}
-                    transition={{ duration: shouldReduceMotion ? 0.01 : 1.2, ease: CINEMATIC }}
-                  >
-                    <path
-                      d="M2 90 L215 206 L428 90 L215 4 Z"
-                      fill="url(#flapGrad)"
-                      stroke="#C9A96E"
-                      strokeWidth="1.2"
-                      filter="url(#deckle)"
-                    />
-                    <path d="M14 90 L215 200 L416 90" stroke="rgba(201,169,110,0.28)" strokeWidth="0.7" fill="none" />
-                    {/* Botanical on reverse of flap */}
-                    <use href="#botanical" />
-                  </motion.g>
-
-                  {/* ── LAYER 5: Wax seal — left half cracks ── */}
-                  <motion.g
-                    style={{ transformOrigin: '215px 176px', transformBox: 'fill-box' }}
-                    animate={sealCracked
-                      ? { rotateZ: -28, translateX: -12, translateY: 20, opacity: 0 }
-                      : { rotateZ: 0, translateX: 0, translateY: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, ease: [0.55, 0, 1, 0.45] }}
-                  >
-                    <clipPath id="sl">
-                      <rect x="182" y="144" width="33" height="64" />
-                    </clipPath>
-                    <circle cx="215" cy="176" r="32" fill="url(#waxGrad)" clipPath="url(#sl)" />
-                    <circle cx="215" cy="176" r="27" fill="none" stroke="rgba(107,31,26,0.4)" strokeWidth="1.3" clipPath="url(#sl)" />
-                    <circle cx="215" cy="176" r="32" fill="url(#waxSheen)" clipPath="url(#sl)" />
-                  </motion.g>
-
-                  {/* Wax seal — right half cracks */}
-                  <motion.g
-                    style={{ transformOrigin: '215px 176px', transformBox: 'fill-box' }}
-                    animate={sealCracked
-                      ? { rotateZ: 28, translateX: 12, translateY: 20, opacity: 0 }
-                      : { rotateZ: 0, translateX: 0, translateY: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, ease: [0.55, 0, 1, 0.45] }}
-                  >
-                    <clipPath id="sr">
-                      <rect x="215" y="144" width="33" height="64" />
-                    </clipPath>
-                    <circle cx="215" cy="176" r="32" fill="url(#waxGrad)" clipPath="url(#sr)" />
-                    <circle cx="215" cy="176" r="27" fill="none" stroke="rgba(107,31,26,0.4)" strokeWidth="1.3" clipPath="url(#sr)" />
-                    <circle cx="215" cy="176" r="32" fill="url(#waxSheen)" clipPath="url(#sr)" />
-                  </motion.g>
-
-                  {/* Wax seal shadow beneath (physical lift) */}
-                  <AnimatePresence>
-                    {!sealCracked && (
-                      <motion.ellipse cx="216" cy="210" rx="22" ry="5" fill="rgba(107,31,26,0.15)"
-                        initial={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
-                      />
-                    )}
-                  </AnimatePresence>
-
-                  {/* Wax fragments */}
-                  <AnimatePresence>
-                    {sealCracked && !shouldReduceMotion && fragments.map((f) => {
-                      const rad = (f.angle * Math.PI) / 180
-                      return (
-                        <motion.circle key={f.id} cx={215} cy={176} r={f.size} fill="#A0312C"
-                          initial={{ opacity: 0.9 }}
-                          animate={{ cx: 215 + Math.cos(rad) * f.dist, cy: 176 + Math.sin(rad) * f.dist, opacity: 0, r: f.size * 0.4 }}
-                          transition={{ duration: 0.65, ease: [0.2, 0, 0.8, 1] }}
-                        />
-                      )
-                    })}
-                  </AnimatePresence>
-
-                  {/* Monogram text */}
-                  <motion.g
-                    animate={sealCracked ? { opacity: 0 } : { opacity: 1 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <text x="215" y="183" fontFamily="Pinyon Script, cursive" fontSize="19" textAnchor="middle"
-                      fill="#8A2820" style={{ filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.35))' }}>
-                      S &amp; A
-                    </text>
-                  </motion.g>
-                </svg>
-
-                {/* Wax seal parallax float overlay */}
-                <motion.div
-                  className="absolute pointer-events-none"
-                  style={{
-                    bottom: '22%', left: '50%',
-                    width: 68, height: 68, marginLeft: -34,
-                    borderRadius: '50%',
-                    boxShadow: sealCracked ? 'none' : '0 5px 10px rgba(107,31,26,0.3), 0 1px 3px rgba(0,0,0,0.18)',
-                  }}
-                  animate={shouldReduceMotion ? {} : { x: sealShift.x, y: sealShift.y }}
-                  transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
-                />
-              </motion.div>
-            </motion.div>
-
-            {/* Wax seal LIVE ring: rotating text + breathing aura */}
-            <AnimatePresence>
-              {phase === 'idle' && !shouldReduceMotion && (
-                <motion.div
-                  className="absolute pointer-events-none z-20"
-                  style={{
-                    width: 'clamp(270px, 82vw, 430px)',
-                    aspectRatio: '430/290',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ delay: 2, duration: 0.6 }}
-                >
-                  <WaxSealAura attentionMode={attentionMode} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Tap prompt */}
-            <AnimatePresence>
-              {showPrompt && (
-                <motion.div
-                  className="flex flex-col items-center gap-3 cursor-pointer select-none"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ delay: 1.5, duration: 0.8, ease: EXPO_OUT }}
-                  onClick={handleOpen}
-                  role="button"
-                  aria-label="Open the wedding invitation"
-                >
-                  {/* Dashes + text */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(201,169,110,0.6))' }} />
-                    <motion.span
-                      className="font-body text-ink-soft tracking-[0.4em] uppercase text-[10px]"
-                      animate={{ opacity: [0.5, 0.9, 0.5] }}
-                      transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                      Tap to open
-                    </motion.span>
-                    <div className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgba(201,169,110,0.6), transparent)' }} />
-                  </div>
-                  {/* Bouncing arrow */}
-                  <motion.div
-                    style={{ color: 'rgba(201,169,110,0.75)' }}
-                    animate={{ y: [0, 6, 0], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="9" y1="2" x2="9" y2="11" stroke="currentColor" strokeWidth="1.2" />
-                      <polyline points="5,8 9,13 13,8" stroke="currentColor" strokeWidth="1.2" fill="none" />
-                    </svg>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              Tap to open
+            </motion.p>
+            <p
+              style={{
+                fontFamily: '"Pinyon Script", cursive',
+                fontSize: 18,
+                color: '#C9A24B',
+                marginTop: 4,
+                opacity: 0.7,
+              }}
+            >
+              ~ Sangeeth &amp; Arya ~
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Petal burst */}
+      {/* Loading monogram */}
       <AnimatePresence>
-        {showPetals && !shouldReduceMotion && (
-          <div className="fixed inset-0 pointer-events-none z-20" aria-hidden>
-            {petals.map((p) => {
-              const rad = (p.angle * Math.PI) / 180
-              return (
-                <motion.div key={p.id} className="absolute"
-                  style={{
-                    left: '50%', top: '50%',
-                    width: p.size, height: p.size * 0.55,
-                    borderRadius: '50% 50% 50% 0',
-                    background: 'radial-gradient(ellipse, rgba(232,197,192,0.9) 0%, rgba(201,169,110,0.45) 100%)',
-                    marginLeft: -p.size / 2, marginTop: -p.size * 0.275,
-                  }}
-                  initial={{ x: 0, y: 0, rotate: 0, opacity: 0.9, scale: 1 }}
-                  animate={{ x: Math.cos(rad) * p.distance + p.drift, y: Math.sin(rad) * p.distance + 100, rotate: p.rotation, opacity: 0, scale: 0.4 }}
-                  transition={{ duration: p.duration, delay: p.delay, ease: [0.2, 0, 0.8, 1] }}
-                />
-              )
-            })}
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-// ── Wax seal: breathing aura + rotating ring text ──
-function WaxSealAura({ attentionMode }: { attentionMode: boolean }) {
-  return (
-    <div
-      className="absolute"
-      style={{
-        /* Position over seal: ~60.7% from top, centered */
-        bottom: '21.5%',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 80, height: 80,
-        marginLeft: -4,
-      }}
-    >
-      {/* Breathing glow */}
-      <motion.div
-        className="absolute inset-0 rounded-full"
-        style={{ inset: -18, background: 'radial-gradient(circle, rgba(201,169,110,0.35) 0%, transparent 65%)' }}
-        animate={attentionMode
-          ? { scale: [0.88, 1.22, 0.88], opacity: [0.4, 0.92, 0.4] }
-          : { scale: [0.92, 1.12, 0.92], opacity: [0.3, 0.6, 0.3] }}
-        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      {/* Expanding pulse ring */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{ inset: -6, border: '1.5px solid rgba(201,169,110,0.4)' }}
-        animate={attentionMode
-          ? { scale: [0.95, 1.5, 1.5], opacity: [0.6, 0, 0] }
-          : { scale: [0.95, 1.35, 1.35], opacity: [0.5, 0, 0] }}
-        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeOut' }}
-      />
-      {/* Rotating text ring */}
-      <motion.svg
-        width="110" height="110" viewBox="0 0 110 110"
-        className="absolute"
-        style={{ top: -15, left: -15 }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-      >
-        <defs>
-          <path id="ring-path" d="M55,55 m-42,0 a42,42 0 1,1 84,0 a42,42 0 1,1 -84,0" />
-        </defs>
-        <text fontFamily="Montserrat, Inter, sans-serif" fontSize="6.2" fontWeight="600" letterSpacing="1.8" fill="#C9A96E" opacity="0.9">
-          <textPath href="#ring-path">
-            TAP TO OPEN ✦ TAP TO OPEN ✦ TAP TO OPEN ✦&nbsp;
-          </textPath>
-        </text>
-      </motion.svg>
-    </div>
-  )
-}
-
-// ── Loading screen: monogram draws itself ──
-function LoadingScreen() {
-  const [visible, setVisible] = useState(true)
-  const shouldReduceMotion = useReducedMotion()
-
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(false), shouldReduceMotion ? 200 : 900)
-    return () => clearTimeout(t)
-  }, [shouldReduceMotion])
-
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-ivory"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.55, ease: EXPO_OUT }}
-        >
-          <svg viewBox="0 0 160 90" width="160" height="90" fill="none" aria-hidden>
-            <motion.text
-              x="80" y="62"
-              fontFamily="Pinyon Script, cursive"
-              fontSize="58"
-              textAnchor="middle"
-              fill="none"
-              stroke="#C9A96E"
-              strokeWidth="1.4"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 0.72, ease: 'easeOut' }}
+        {!ready && (
+          <motion.div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: '#0f0807',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 80,
+            }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <motion.span
+              className="gold-foil"
+              style={{ fontFamily: '"Pinyon Script", cursive', fontSize: 64 }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
             >
               S &amp; A
-            </motion.text>
-          </svg>
-          <div className="w-24 h-px bg-gold/20 mt-5 overflow-hidden relative">
-            <motion.div
-              className="absolute inset-y-0 left-0 bg-gold"
-              initial={{ width: 0 }}
-              animate={{ width: '100%' }}
-              transition={{ duration: 0.72, ease: 'easeOut' }}
-            />
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            </motion.span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
