@@ -118,8 +118,8 @@ export default function App() {
                 subtitle="Celebrate with us"
                 date="Saturday, 29 . 08 . 2026"
                 time="six in the evening"
-                venue="Reception Venue"
-                mapUrl="https://maps.app.goo.gl/CRo8WU7sw4dCcAjWA"
+                venue="Plaza Auditorium"
+                mapUrl="https://maps.app.goo.gl/ttzpEpnTZAcriK617"
                 calEvent={receptionEvent}
               />
             </section>

@@ -86,6 +86,6 @@ export const receptionEvent: CalendarEvent = {
   title: 'Sangeeth & Arya — Wedding Reception',
   startIST: '20260829T180000',
   endIST: '20260829T210000',
-  location: 'Reception Venue — see invitation for details',
+  location: 'Plaza Auditorium',
   description: 'Join us for the wedding reception of Sangeeth Lal P S & Arya',
 }
