@@ -75,8 +75,8 @@ export function downloadICS(event: CalendarEvent): void {
 
 export const weddingEvent: CalendarEvent = {
   title: 'Sangeeth & Arya — Wedding Ceremony',
-  startIST: '20260823T110000',
-  endIST: '20260823T140000',
+  startIST: '20260823T120000',
+  endIST: '20260823T150000',
   location: 'M K Convention Centre, Eramalloor',
   description: 'Join us to celebrate the wedding of Sangeeth Lal P S & Arya',
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const WEDDING_DATE = new Date('2026-08-23T05:30:00Z') // 11:00 AM IST
+const WEDDING_DATE = new Date('2026-08-23T06:30:00Z') // 12:00 PM IST
 
 interface TimeLeft {
   days: number; hours: number; minutes: number; seconds: number

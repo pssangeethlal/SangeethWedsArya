@@ -102,7 +102,7 @@ export default function App() {
               <EventCard
                 title="The Wedding Ceremony"
                 date="Sunday, 23 . 08 . 2026"
-                time="eleven in the morning"
+                time="twelve noon"
                 venue="M K Convention Centre"
                 address="Eramalloor"
                 mapUrl="https://maps.app.goo.gl/FqXUdBE8PCmXdsFX9"
