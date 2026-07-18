@@ -15,7 +15,7 @@ export default function Gallery() {
   const next = () => setLightboxIdx((i) => (i === null ? null : (i + 1) % images.length))
 
   return (
-    <section className="py-24 px-6 max-w-6xl mx-auto">
+    <section id="gallery" aria-label="Photo gallery" className="py-24 px-6 max-w-6xl mx-auto">
       <motion.div
         className="text-center mb-16"
         initial={{ opacity: 0, y: 20, filter: 'blur(6px)' }}
@@ -91,6 +91,7 @@ export default function Gallery() {
                       src={src}
                       alt={`Wedding photo ${i + 1}`}
                       loading="lazy"
+                      decoding="async"
                       className="w-full object-cover block transition-all duration-500 group-hover:scale-[1.05]"
                       style={{
                         filter: 'sepia(0.08) saturate(0.94) contrast(1.02)',

@@ -47,6 +47,31 @@ body {
 p, li { line-height: 1.7; letter-spacing: 0.01em; }
 h1, h2, h3 { letter-spacing: -0.01em; }
 
+/* Offset anchor targets so sticky nav doesn't cover section tops */
+[id] { scroll-margin-top: 76px; }
+
+/* Skip link — visible only on keyboard focus */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  transform: translateY(-160%);
+  background: var(--maroon);
+  color: var(--ivory);
+  font-family: 'Marcellus', serif;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border-radius: 4px;
+  transition: transform 200ms ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--gold-light);
+}
+
 /* Faint paper-fiber texture */
 body::before {
   content: '';

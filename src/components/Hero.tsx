@@ -7,7 +7,7 @@ export default function Hero() {
   const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
   const y = useTransform(scrollYProgress, [0, 1], [0, -40])
-  const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0.45, 0.7])
+  const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0.55, 0.78])
 
   return (
     <section
@@ -23,6 +23,8 @@ export default function Hero() {
             alt="Sangeeth and Arya"
             className="w-full h-full object-cover animate-kenburns"
             loading="eager"
+            fetchPriority="high"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-blush via-cream to-sage/30" />
@@ -57,6 +59,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20, letterSpacing: '0.2em' }}
           animate={{ opacity: 1, y: 0, letterSpacing: '0.5em' }}
           transition={{ duration: 1.2, delay: 0.5 }}
+          style={{ textShadow: '0 1px 8px rgba(42,30,26,0.7)' }}
         >
           Together with their families
         </motion.p>
@@ -99,6 +102,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 1.4 }}
+          style={{ textShadow: '0 1px 8px rgba(42,30,26,0.7)' }}
         >
           23 . 08 . 2026
         </motion.p>

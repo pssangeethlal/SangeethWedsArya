@@ -128,6 +128,7 @@ function PersonCard({ photo, name, nameDisplay, role, parents, home, delay = 0 }
               src={photo}
               alt={`Portrait of ${nameDisplay}`}
               loading="lazy"
+              decoding="async"
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -251,7 +252,7 @@ function PeacockFeather() {
 
 export default function CoupleSection() {
   return (
-    <section className="py-24 px-6 max-w-5xl mx-auto relative">
+    <section id="couple" aria-label="The couple" className="py-24 px-6 max-w-5xl mx-auto relative">
       <motion.div
         className="text-center mb-16"
         initial={{ opacity: 0, y: 20, filter: 'blur(6px)' }}

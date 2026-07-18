@@ -138,9 +138,9 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
       </span>
       <div>
         <div style={{
-          fontFamily: 'Inter, sans-serif', fontSize: 9,
-          letterSpacing: '0.32em', textTransform: 'uppercase',
-          color: 'rgba(107,93,84,0.65)', fontWeight: 600, marginBottom: 2,
+          fontFamily: 'Inter, sans-serif', fontSize: 10,
+          letterSpacing: '0.28em', textTransform: 'uppercase',
+          color: 'var(--ink-soft)', fontWeight: 600, marginBottom: 2,
         }}>
           {label}
         </div>
