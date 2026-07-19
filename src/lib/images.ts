@@ -1,14 +1,16 @@
 // Auto-import all images from src/images/
 // Add or remove photos from src/images/ and they'll appear automatically.
 
-const imageModules = import.meta.glob('../images/*', {
+// Extensions are listed explicitly rather than globbing '*'. A bare glob
+// imports every file in the folder, so formats browsers can't render (HEIC)
+// still get bundled and downloaded before being filtered out at runtime.
+const imageModules = import.meta.glob('../images/*.{jpg,jpeg,png,webp,avif}', {
   eager: true,
   query: '?url',
   import: 'default',
 }) as Record<string, string>
 
 export const allImages: string[] = Object.values(imageModules)
-  .filter((src) => !/\.heic$/i.test(src))
 
 // Specific photos — fallback to first available image if not found
 const find = (name: string) =>
