@@ -3,5 +3,6 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/SangeethWedsArya/',
+  // Custom domain serves from the root, not /SangeethWedsArya/
+  base: '/',
 })
