@@ -25,6 +25,9 @@ export default function Hero() {
             loading="eager"
             fetchPriority="high"
             decoding="async"
+            // Portrait source in a landscape viewport: bias the crop upward
+            // so the couple stays in frame instead of being cut at centre.
+            style={{ objectPosition: 'center 32%' }}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-blush via-cream to-sage/30" />

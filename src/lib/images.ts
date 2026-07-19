@@ -17,4 +17,6 @@ const find = (name: string) =>
 export const groomPhoto = find('groom.')
 export const groomPhoto1 = find('groom1')
 export const bridePhoto = find('bride.')
-export const heroPhoto = find('groomandbride')
+// Hero + WhatsApp share card both use this shot (public/og-image.jpg is
+// cropped from the same file), so the link preview matches the landing view.
+export const heroPhoto = find('gandb')
