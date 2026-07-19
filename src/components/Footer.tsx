@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { primaryEvent } from '../lib/invite'
 
 function MonogramMandala() {
   return (
@@ -80,7 +81,7 @@ export default function Footer() {
         <p className="font-heading text-sm tracking-[0.42em] uppercase text-maroon">
           Sangeeth &amp; Arya
         </p>
-        <p className="font-display italic text-ink-soft text-base">23 . 08 . 2026</p>
+        <p className="font-display italic text-ink-soft text-base">{primaryEvent.dateDisplay}</p>
         <div className="w-24 border-t border-gold/30 mt-2" aria-hidden />
         <p className="font-body text-[10px] text-ink-soft/50 tracking-[0.28em] uppercase mt-1">
           See you there

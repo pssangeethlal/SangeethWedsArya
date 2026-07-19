@@ -14,8 +14,7 @@ import CursorTrail from './components/CursorTrail'
 import TopNav from './components/TopNav'
 import { ScrollProgressTrack, ScrollIndicator, MapFAB } from './components/ScrollProgress'
 import { weddingEvent, receptionEvent } from './lib/calendar'
-
-const VENUE_MAP_URL = 'https://maps.app.goo.gl/FqXUdBE8PCmXdsFX9'
+import { showWedding, showReception, primaryEvent } from './lib/invite'
 const SEEN_KEY = 'sw-envelope-seen'
 
 export default function App() {
@@ -99,29 +98,32 @@ export default function App() {
               >
                 <p className="section-sub mb-4">Join us for</p>
               </motion.div>
-              <EventCard
-                title="The Wedding Ceremony"
-                date="Sunday, 23 . 08 . 2026"
-                time="twelve noon"
-                venue="M K Convention Centre"
-                address="Eramalloor"
-                mapUrl="https://maps.app.goo.gl/FqXUdBE8PCmXdsFX9"
-                calEvent={weddingEvent}
-              />
-            </section>
 
-            <BotanicalDivider />
+              {showWedding && (
+                <EventCard
+                  title="The Wedding Ceremony"
+                  date="Sunday, 23 . 08 . 2026"
+                  time="twelve noon"
+                  venue="M K Convention Centre"
+                  address="Eramalloor"
+                  mapUrl="https://maps.app.goo.gl/FqXUdBE8PCmXdsFX9"
+                  calEvent={weddingEvent}
+                />
+              )}
 
-            <section className="py-24 px-6">
-              <EventCard
-                title="Wedding Reception"
-                subtitle="Celebrate with us"
-                date="Saturday, 29 . 08 . 2026"
-                time="six in the evening"
-                venue="Plaza Auditorium"
-                mapUrl="https://maps.app.goo.gl/ttzpEpnTZAcriK617"
-                calEvent={receptionEvent}
-              />
+              {showWedding && showReception && <BotanicalDivider className="my-20" />}
+
+              {showReception && (
+                <EventCard
+                  title="Wedding Reception"
+                  subtitle="Celebrate with us"
+                  date="Saturday, 29 . 08 . 2026"
+                  time="six in the evening"
+                  venue="Plaza Auditorium"
+                  mapUrl="https://maps.app.goo.gl/ttzpEpnTZAcriK617"
+                  calEvent={receptionEvent}
+                />
+              )}
             </section>
 
             <Gallery />
@@ -130,7 +132,7 @@ export default function App() {
 
             <ScrollProgressTrack />
             <ScrollIndicator />
-            <MapFAB mapUrl={VENUE_MAP_URL} />
+            <MapFAB mapUrl={primaryEvent.mapUrl} />
           </motion.main>
           </>
         )}

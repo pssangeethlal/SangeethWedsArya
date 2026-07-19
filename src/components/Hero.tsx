@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { heroPhoto } from '../lib/images'
+import { primaryEvent } from '../lib/invite'
 
 export default function Hero() {
   const ref = useRef<HTMLDivElement>(null)
@@ -107,7 +108,7 @@ export default function Hero() {
           transition={{ duration: 0.9, delay: 1.4 }}
           style={{ textShadow: '0 1px 8px rgba(42,30,26,0.7)' }}
         >
-          23 . 08 . 2026
+          {primaryEvent.dateDisplay}
         </motion.p>
       </motion.div>
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { primaryEvent } from '../lib/invite'
 
 interface EnvelopeProps {
   onOpen: () => void
@@ -331,7 +332,7 @@ export default function Envelope({ onOpen }: EnvelopeProps) {
               margin: 0,
             }}
           >
-            23 . 08 . 2026
+            {primaryEvent.dateDisplay}
           </p>
         </motion.div>
 

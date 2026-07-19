@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { primaryEvent } from '../lib/invite'
 
-const WEDDING_DATE = new Date('2026-08-23T06:30:00Z') // 12:00 PM IST
+// Reception-only invites count down to the reception, not the ceremony.
+const TARGET_DATE = new Date(primaryEvent.countdownUTC)
 
 interface TimeLeft {
   days: number; hours: number; minutes: number; seconds: number
 }
 
 function getTimeLeft(): TimeLeft {
-  const diff = WEDDING_DATE.getTime() - Date.now()
+  const diff = TARGET_DATE.getTime() - Date.now()
   if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 }
   return {
     days: Math.floor(diff / 86400000),
